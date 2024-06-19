@@ -1,0 +1,14 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    margin: 0;
+}
+
+main {
+    width: 85%;  /* Remaining width of the page */
+    margin-left: 15%;
+    margin-top: 25px;
+    padding: 20px;
+    position: relative;  /* Ensure it is laid out with respect to the body */
+    background: #fff;  /* Optional: sets a background for the main content */
+}

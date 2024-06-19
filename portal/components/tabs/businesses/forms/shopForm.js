@@ -155,7 +155,7 @@ export const shopForm = () => {
         <div class="day-hours-list" id="day-hours-list"></div>
       </div>
 
-      <button type="submit">Submit</button>
+      <button type="button" id="submitButton">Submit</button>
     </form>
   `;
 }
@@ -164,6 +164,44 @@ export const attachCoordinatesHandler = (formContainer) => {
   const autofillButton = formContainer.querySelector('#autofill-button');
   autofillButton.addEventListener('click', handleAutofill);
 };
+
+const getUniqueFilename = (filename) => {
+  const date = new Date().toISOString().replace(/[-:.]/g, '');
+  console.log(`${date}_${filename}`)
+  return `${date}_${filename}`;
+};
+
+const uploadFilesToDreamHost = async (formData) => {
+  try {
+    console.log('Uploading files to DreamHost');
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value.name}`);
+    }
+
+    const response = await fetch('https://dev.365easyflow.com/easyflow-images/upload.php', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const responseBody = await response.text();
+    console.log('Raw response body:', responseBody);
+
+    const result = JSON.parse(responseBody);
+    console.log('Upload result:', result);
+
+    if (result.length === 0) {
+      console.error('Upload result is empty:', result);
+      throw new Error('Upload to DreamHost failed: empty result');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    throw error;
+  }
+};
+
+
 
 async function handleAutofill() {
   const streetAddress = document.getElementById('streetAddress').value;
@@ -218,25 +256,13 @@ export const selectOnlyThis = (checkbox, groupName, callback) => {
 /* Social Functions */
 
 export const attachSocialMediaHandler = (formContainer) => {
-  const addButton = formContainer.querySelector(`#add-social-media`);
-  const socialMediaList = formContainer.querySelector(`#social-media-list`);
-
-  if (!addButton || !socialMediaList) {
-    console.error('One or more elements not found for Social Media handlers');
-    return;
-  }
-
+  const addButton = formContainer.querySelector('#add-social-media');
+  const socialMediaList = formContainer.querySelector('#social-media-list');
   const socialMediaPairs = [];
 
   addButton.addEventListener('click', () => {
-    const platformInput = formContainer.querySelector(`#socialPlatform`);
-    const addressInput = formContainer.querySelector(`#socialAddress`);
-
-    if (!platformInput || !addressInput) {
-      console.error('Social media inputs not found');
-      return;
-    }
-
+    const platformInput = formContainer.querySelector('#socialPlatform');
+    const addressInput = formContainer.querySelector('#socialAddress');
     const platform = platformInput.value.trim();
     const address = addressInput.value.trim();
 
@@ -244,6 +270,8 @@ export const attachSocialMediaHandler = (formContainer) => {
       socialMediaPairs.push({ platform, address });
       const listItem = document.createElement('li');
       listItem.textContent = `${platform}: ${address}`;
+      listItem.dataset.platform = platform;
+      listItem.dataset.address = address;
       socialMediaList.appendChild(listItem);
 
       // Clear inputs
@@ -254,7 +282,7 @@ export const attachSocialMediaHandler = (formContainer) => {
 
   // Store the social media pairs in the form container for later retrieval
   formContainer.socialMediaPairs = socialMediaPairs;
-}
+};
 
 /* Logo Upload */
 
@@ -262,7 +290,7 @@ export const attachLogoUploadHandler = (formContainer) => {
   const logoUploadInput = formContainer.querySelector('#logoUpload');
   const logoPreviewContainer = formContainer.querySelector('#logo-preview');
 
-  logoUploadInput.addEventListener('change', () => {
+  logoUploadInput.addEventListener('change', async () => {
     const file = logoUploadInput.files[0];
     if (file) {
       const reader = new FileReader();
@@ -296,15 +324,33 @@ export const attachLogoUploadHandler = (formContainer) => {
         removeButton.className = 'remove-button';
         removeButton.addEventListener('click', () => {
           logoPreviewContainer.innerHTML = ''; // Clear the logo preview
+          formContainer.logoUrl = ''; // Reset the logo URL
         });
 
         logoPreviewContainer.appendChild(img);
         logoPreviewContainer.appendChild(removeButton);
       };
       reader.readAsDataURL(file);
+
+      // Upload file to DreamHost
+      const uniqueFilename = getUniqueFilename(file.name);
+      const logoFormData = new FormData();
+      logoFormData.append('imageFiles[]', file, uniqueFilename); // Use 'imageFiles[]' key to match server-side script
+
+      try {
+        const uploadResult = await uploadFilesToDreamHost(logoFormData);
+        if (uploadResult && uploadResult[0]) {
+          formContainer.logoUrl = `uploads/${uniqueFilename}`;
+          console.log('Logo URL:', formContainer.logoUrl);
+        } else {
+          console.error('Failed to upload logo:', uploadResult);
+        }
+      } catch (error) {
+        console.error('Error during logo upload:', error);
+      }
     }
   });
-}
+};
 
 /* Images Upload */
 
@@ -313,14 +359,12 @@ export const attachImageUploadHandler = (formContainer) => {
   const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
   const imageFileListContainer = formContainer.querySelector('#image-file-list');
 
-  const imageFiles = [];
+  formContainer.imageUrls = []; // Initialize image URLs array
 
-  imageUploadInput.addEventListener('change', () => {
+  imageUploadInput.addEventListener('change', async () => {
     const files = imageUploadInput.files;
 
-    Array.from(files).forEach(file => {
-      imageFiles.push(file);
-
+    for (const file of files) {
       // Create and display thumbnail
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -353,9 +397,9 @@ export const attachImageUploadHandler = (formContainer) => {
         removeButton.textContent = 'Remove';
         removeButton.className = 'remove-button';
         removeButton.addEventListener('click', () => {
-          const index = imageFiles.indexOf(file);
+          const index = formContainer.imageUrls.indexOf(file.name);
           if (index > -1) {
-            imageFiles.splice(index, 1);
+            formContainer.imageUrls.splice(index, 1);
           }
           imageThumbnailsContainer.removeChild(thumbnailContainer);
           imageFileListContainer.removeChild(listItem);
@@ -371,11 +415,26 @@ export const attachImageUploadHandler = (formContainer) => {
         imageFileListContainer.appendChild(listItem);
       };
       reader.readAsDataURL(file);
-    });
-  });
 
-  return imageFiles; 
-}
+      // Upload file to DreamHost
+      const uniqueFilename = getUniqueFilename(file.name);
+      const imageFormData = new FormData();
+      imageFormData.append('imageFiles[]', file, uniqueFilename); // Use 'imageFiles[]' key to match server-side script
+
+      try {
+        const uploadResult = await uploadFilesToDreamHost(imageFormData);
+        if (uploadResult && uploadResult[0]) {
+          formContainer.imageUrls.push(`uploads/${uniqueFilename}`);
+          console.log('Image URLs:', formContainer.imageUrls);
+        } else {
+          console.error('Failed to upload image:', uploadResult);
+        }
+      } catch (error) {
+        console.error('Error during image upload:', error);
+      }
+    }
+  });
+};
 
 /* Description */
 
@@ -385,37 +444,43 @@ export const initializeTinyMCE = (selector) => {
     license_key: 'gpl',
     plugins: 'link code',
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
+    setup: (editor) => {
+      editor.on('change', () => {
+        editor.save(); // Ensure the content is saved to the textarea
+      });
+    },
   });
-}
+};
 
-export const attachSpecialDayHandlers = (dayHoursArray) => {
-  const addButton = document.getElementById(`add-day-button`);
-  const dayInput = document.getElementById(`special-day`);
-  const hoursInput = document.getElementById(`altered-hours`);
-  const listContainer = document.getElementById(`day-hours-list`);
 
-  if (!addButton || !dayInput || !hoursInput || !listContainer) {
-    console.error('One or more elements not found for Special Day handlers');
-    return;
-  }
+export const attachSpecialDayHandlers = (formContainer) => {
+  const specialDays = [];
+  formContainer.querySelector('#add-day-button').addEventListener('click', () => {
+    const specialDayInput = formContainer.querySelector('#special-day');
+    const alteredHoursInput = formContainer.querySelector('#altered-hours');
+    const specialDay = specialDayInput.value.trim();
+    const alteredHours = alteredHoursInput.value.trim();
 
-  addButton.addEventListener('click', () => {
-    const day = dayInput.value.trim();
-    const hours = hoursInput.value.trim();
+    if (specialDay && alteredHours) {
+      specialDays.push({ day: specialDay, hours: alteredHours });
 
-    if (day && hours) {
+      // Display the added special day and altered hours
+      const dayHoursList = formContainer.querySelector('#day-hours-list');
       const listItem = document.createElement('div');
       listItem.className = 'day-hours-item';
-      listItem.textContent = `${day}: ${hours}`;
-      listContainer.appendChild(listItem);
+      listItem.textContent = `${specialDay}: ${alteredHours}`;
+      dayHoursList.appendChild(listItem);
 
-      dayHoursArray.push({ day, hours });
-
-      // Clear inputs
-      dayInput.value = '';
-      hoursInput.value = '';
+      // Clear input fields
+      specialDayInput.value = '';
+      alteredHoursInput.value = '';
+    } else {
+      alert('Please fill both fields.');
     }
   });
+
+  // Attach specialDays array to formContainer for later use
+  formContainer.specialDays = specialDays;
 };
 
 /* Initialization Function */
@@ -426,11 +491,213 @@ export const initializeShopForm = async (formContainer) => {
   attachLogoUploadHandler(formContainer);
   attachImageUploadHandler(formContainer);
   initializeTinyMCE('#description');
-  attachSpecialDayHandlers();
+  attachSpecialDayHandlers(formContainer);
+
+  // Initialize hour and menu selection handlers
+  //const sectionContainer = formContainer.querySelector(`.form-section[data-id="hours"]`);
+  //if (!sectionContainer) {
+    //console.error(`Section container with id hours not found`);
+    //return;
+  //}
+
+  //const operationModelCheckboxes = sectionContainer.querySelectorAll('input[name="operationModel"]');
+  //const menuStyleCheckboxes = sectionContainer.querySelectorAll('input[name="menuStyle"]');
+
+  //if (operationModelCheckboxes.length > 0) {
+   // operationModelCheckboxes.forEach((checkbox) => {
+      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'operationModel', showDaySelection));
+    //});
+  //} else {
+    //console.error('Operation model checkboxes not found');
+ // }
+
+  //if (menuStyleCheckboxes.length > 0) {
+    //menuStyleCheckboxes.forEach((checkbox) => {
+      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'menuStyle', showMenuSelection));
+    //});
+  //} else {
+    //console.error('Menu style checkboxes not found');
+  //}
+
+  // Initialize menu selection handlers
+  await initializeMenuSelection(formContainer);
 }
 
+export const showDaySelection = (checkbox) => {
+  const container = checkbox.closest('.form-group-container');
+  const daySelectionContainer = container.querySelector('#daySelectionContainer');
+  console.log('showDaySelection:', daySelectionContainer);
+  if (daySelectionContainer) {
+    if (checkbox.value !== '24/7') {
+      daySelectionContainer.style.display = 'block';
+    } else {
+      daySelectionContainer.style.display = 'none';
+    }
+  } else {
+    console.error('Day selection container not found');
+  }
+};
+
+export const showMenuSelection = (checkbox) => {
+  const container = checkbox.closest('.form-group-container');
+  const menuSelectionContainer = container.querySelector('#menuSelectionContainer');
+  console.log('showMenuSelection:', menuSelectionContainer);
+  if (menuSelectionContainer) {
+    if (checkbox.value === 'MultipleMenus') {
+      menuSelectionContainer.style.display = 'block';
+    } else {
+      menuSelectionContainer.style.display = 'none';
+    }
+  } else {
+    console.error('Menu selection container not found');
+  }
+};
+
+window.updateTable = function() {
+  const operationModel = document.querySelector('input[name="operationModel"]:checked');
+  const menuStyle = document.querySelector('input[name="menuStyle"]:checked');
+  const daysOpen = Array.from(document.querySelectorAll('input[name="daysOpen"]:checked')).map(cb => cb.value);
+  const menuTypes = Array.from(document.querySelectorAll('input[name="menuType"]:checked')).map(cb => cb.value);
+
+  const tableContainer = document.getElementById('scheduleTableContainer');
+  const tableHeader = document.getElementById('scheduleTableHeader');
+  const tableBody = document.querySelector('#scheduleTable tbody');
+  tableBody.innerHTML = ''; // Clear existing table rows
+
+  if (!operationModel || !menuStyle || (menuStyle.value === 'MultipleMenus' && menuTypes.length === 0)) {
+    tableContainer.style.display = 'none';
+    return;
+  }
+
+  tableContainer.style.display = 'block';
+
+  const days = operationModel.value === '7Days/SelectHours' ? ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'] : daysOpen;
+
+  // Create table header
+  tableHeader.innerHTML = '<th>Day/Menu</th>';
+  if (menuStyle.value === 'MultipleMenus') {
+    menuTypes.forEach(menu => {
+      const th = document.createElement('th');
+      th.textContent = menu;
+      tableHeader.appendChild(th);
+    });
+  } else {
+    const th = document.createElement('th');
+    th.textContent = 'Hours Open';
+    tableHeader.appendChild(th);
+  }
+
+  // Create table rows
+  days.forEach(day => {
+    const row = document.createElement('tr');
+    const dayCell = document.createElement('td');
+    dayCell.textContent = day;
+    row.appendChild(dayCell);
+
+    if (menuStyle.value === 'MultipleMenus') {
+      menuTypes.forEach(() => {
+        const inputCell = document.createElement('td');
+        inputCell.innerHTML = '<input type="text" name="hoursOpen">';
+        row.appendChild(inputCell);
+      });
+    } else {
+      const inputCell = document.createElement('td');
+      inputCell.innerHTML = '<input type="text" name="hoursOpen">';
+      row.appendChild(inputCell);
+    }
+
+    tableBody.appendChild(row);
+  });
+};
+
+export const initializeMenuSelection = async (formContainer) => {
+  const menuTypeDropdown = formContainer.querySelector('#menuType');
+  const averageCostDropdown = formContainer.querySelector('#averageCost');
+  const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
+  const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
+  const newMenuTypeInput = formContainer.querySelector('#newMenuType');
+  const menuTypeList = formContainer.querySelector('#menu-type-list');
+
+  const menuTypes = [];
+
+  const fetchedMenuTypes = await getMenuTypes();
+  if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
+    fetchedMenuTypes.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type.id;
+      option.textContent = type.name;
+      menuTypeDropdown.appendChild(option);
+    });
+  } else {
+    console.error('Error fetching menu types:', fetchedMenuTypes);
+  }
+
+  const fetchedAverageCosts = await getAverageCosts();
+  if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
+    fetchedAverageCosts.forEach(cost => {
+      const option = document.createElement('option');
+      option.value = cost.id;
+      option.textContent = `${cost.symbol} - ${cost.description}`;
+      averageCostDropdown.appendChild(option);
+    });
+  } else {
+    console.error('Error fetching average costs:', fetchedAverageCosts);
+  }
+
+  addMenuTypeButton.addEventListener('click', () => {
+    const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
+    if (selectedOption) {
+      const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
+      menuTypeList.appendChild(listItem);
+      menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
+    }
+  });
+
+  addNewMenuTypeButton.addEventListener('click', async () => {
+    const newMenuType = newMenuTypeInput.value.trim();
+    if (newMenuType) {
+      const response = await addNewMenuType(newMenuType);
+      if (response && response.id) {
+        const option = document.createElement('option');
+        option.value = response.id;
+        option.textContent = newMenuType;
+        menuTypeDropdown.appendChild(option);
+
+        const listItem = createMenuListItem(newMenuType, response.id);
+        menuTypeList.appendChild(listItem);
+        menuTypes.push({ id: response.id, name: newMenuType });
+
+        newMenuTypeInput.value = ''; // Clear the input field
+      } else {
+        console.error('Error adding new menu type:', response);
+      }
+    }
+  });
+
+  // Attach menuTypes to formContainer for later use
+  formContainer.menuTypes = menuTypes;
+
+  function createMenuListItem(name, id) {
+    const listItem = document.createElement('li');
+    listItem.textContent = name;
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'x';
+    removeButton.style.color = 'red';
+    removeButton.style.marginLeft = '10px';
+    removeButton.addEventListener('click', () => {
+      menuTypeList.removeChild(listItem);
+      const index = menuTypes.findIndex(type => type.id === id);
+      if (index > -1) {
+        menuTypes.splice(index, 1);
+      }
+    });
+    listItem.appendChild(removeButton);
+    return listItem;
+  }
+};
+
 export const getMenuTypes = async () => {
-  const tableName = `shop_type`;
+  const tableName = `eat_type`;
   try {
     const response = await apiService.fetch(`menu-types?table=${tableName}`);
     console.log('Fetched menu types:', response); // Logging the response
@@ -441,8 +708,21 @@ export const getMenuTypes = async () => {
   }
 };
 
+export const getAverageCosts = async () => {
+  const tableName = `eat_cost`;
+  try {
+    console.log(`Fetching average costs for table: ${tableName}`);
+    const response = await apiService.fetch(`average-costs?table=${tableName}`);
+    console.log('Fetched average costs:', response); // Logging the response
+    return response;
+  } catch (error) {
+    console.error(`Error fetching average costs:`, error);
+    return [];
+  }
+};
+
 export const addNewMenuType = async (newMenuType) => {
-  const tableName = `shop_type`;
+  const tableName = `eat_type`;
   try {
     const response = await apiService.fetch('menu-types', {
       method: 'POST',
@@ -458,3 +738,30 @@ export const addNewMenuType = async (newMenuType) => {
     return { id: Date.now(), name: newMenuType }; // Fallback to a mock response
   }
 };
+
+// Function to handle adding social media entries
+function addSocialMediaEntry() {
+  const platform = document.getElementById('socialPlatform').value;
+  const address = document.getElementById('socialAddress').value;
+
+  if (platform && address) {
+    const listItem = document.createElement('li');
+    listItem.textContent = `${platform}: ${address}`;
+    listItem.setAttribute('data-platform', platform);
+    listItem.setAttribute('data-address', address);
+
+    const socialMediaList = document.getElementById('social-media-list');
+    socialMediaList.appendChild(listItem);
+
+    // Clear inputs
+    document.getElementById('socialPlatform').value = '';
+    document.getElementById('socialAddress').value = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formContainer = document.querySelector('.tab-content');
+  if (formContainer) {
+    initializeShopForm(formContainer);
+  }
+});

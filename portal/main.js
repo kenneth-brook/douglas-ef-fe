@@ -21,11 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tabManager = new TabManager(store, apiService, router);
         console.log("TabManager initialized");
         
-        router.addRoute('default', () => {
-            console.log("Default route action");
-            router.navigate('businesses/list');
-        });
-
         router.loadCurrentRoute();
     } catch (error) {
         console.error("Failed to initialize tabs based on user role:", error);

@@ -1,6 +1,3 @@
-import Router from '../services/router.js';
-import Store from '../services/store.js';
-import ApiService from '../services/apiService.js';
 import BusinessesTab from './tabs/businesses/businessesTab.js';
 import EventsTab from './tabs/events/eventTab.js';
 import OfficeTab from './tabs/office/officeTab.js';

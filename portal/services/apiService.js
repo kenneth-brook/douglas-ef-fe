@@ -59,6 +59,28 @@ class ApiService {
     });
     return response;
   }
+
+  async submitPlayForm(formData) {
+    const response = await this.fetch('play-form-submission', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    return response;
+  }
+
+  async submitShopForm(formData) {
+    const response = await this.fetch('shop-form-submission', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    return response;
+  }
 }
 
 export default ApiService;

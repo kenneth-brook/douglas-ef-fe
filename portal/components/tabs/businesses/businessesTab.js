@@ -23,14 +23,16 @@ class BusinessesTab {
             console.error("Content area element not found");
             return;
         }
-        contentArea.innerHTML = ''; // Clear existing content
+        contentArea.innerHTML = '';
         const listBusinesses = new ListBusinesses(this.router);
         const renderedListBusinesses = listBusinesses.render();
         contentArea.appendChild(renderedListBusinesses);
+        this.setActiveTab('businesses/list');
     }
 
     showAddBusiness() {
         this.displayBusinessTypeSelection();
+        this.setActiveTab('businesses/add');
     }
 
     showEditBusiness(id) {
@@ -40,7 +42,7 @@ class BusinessesTab {
             return;
         }
         contentArea.innerHTML = `<div>Edit Business with ID: ${id}</div>`;
-        // More complex logic to display edit business form
+        this.setActiveTab(`businesses/edit/${id}`);
     }
 
     displayBusinessTypeSelection() {
@@ -102,7 +104,11 @@ class BusinessesTab {
         }
 
         contentArea.innerHTML = formHtml;
-        this.initializeForm(contentArea, type, initializeForm);
+
+        // Ensure the DOM is updated before initializing TinyMCE
+        setTimeout(() => {
+            this.initializeForm(contentArea, type, initializeForm);
+        }, 100); // Adjust delay if needed
     }
 
     initializeForm(formContainer, type, initializeForm) {
@@ -188,12 +194,9 @@ class BusinessesTab {
                     detailsFormData.append('businessId', businessId);
 
                     if (type === 'eat') {
-                        console.log('Preparing eat form data');
                         detailsFormData.append('menuTypes', formData.get('menuTypes'));
                         detailsFormData.append('averageCost', formData.get('averageCost'));
                         detailsFormData.append('special_days', formData.get('specialDays'));
-
-                        console.log('Details Form Data:', detailsFormData.toString());
 
                         try {
                             const eatResponse = await this.apiService.submitEatForm(detailsFormData);
@@ -205,19 +208,42 @@ class BusinessesTab {
 
                     // Add other type-specific fields as needed
                     if (type === 'play') {
-                        console.log('Preparing play form data');
-                        // Add play-specific fields
+                      detailsFormData.append('menuTypes', formData.get('menuTypes'));
+                      detailsFormData.append('special_days', formData.get('specialDays'));
+                      const operationalHours = this.collectOperationalHours(formContainer);
+                      detailsFormData.append('hours', JSON.stringify(operationalHours));
+  
+                      try {
+                          const playResponse = await this.apiService.submitPlayForm(detailsFormData);
+                          console.log('Play form data submitted', playResponse);
+                      } catch (error) {
+                          console.error('Error submitting play form:', error);
+                      }
                     }
 
                     if (type === 'shop') {
-                        console.log('Preparing shop form data');
-                        // Add shop-specific fields
+                      detailsFormData.append('menuTypes', formData.get('menuTypes'));
+                      detailsFormData.append('special_days', formData.get('specialDays'));
+                      const operationalHours = this.collectOperationalHours(formContainer);
+                      detailsFormData.append('hours', JSON.stringify(operationalHours));
+  
+                      try {
+                          const shopResponse = await this.apiService.submitShopForm(detailsFormData);
+                          console.log('Shop form data submitted', shopResponse);
+                      } catch (error) {
+                          console.error('Error submitting shop form:', error);
+                      }
                     }
 
                     if (type === 'stay') {
-                        console.log('Preparing stay form data');
                         // Add stay-specific fields
                     }
+
+                    // Redirect to the list view upon successful submission
+                    console.log('Redirecting to list view');
+                    setTimeout(() => {
+                        this.router.navigate('businesses/list');
+                    }, 1000); // Adjust delay as needed
                 }
             } catch (error) {
                 console.error('Error submitting form:', error);
@@ -226,7 +252,6 @@ class BusinessesTab {
     }
 
     async handleFileUploads(formData) {
-        console.log('Handling file uploads');
         const logoFile = formData.get('logoFile');
         const imageFiles = formData.getAll('imageFiles');
 
@@ -256,6 +281,30 @@ class BusinessesTab {
         }
 
         return { logoUrl, imageUrls };
+    }
+
+    collectOperationalHours(formContainer) {
+      const hoursTableRows = formContainer.querySelectorAll('.hours-table tbody tr');
+      const operationalHours = {};
+  
+      hoursTableRows.forEach(row => {
+          const day = row.cells[0].textContent.trim();
+          const hours = row.cells[1].querySelector('input').value.trim();
+          operationalHours[day] = hours;
+      });
+  
+      return operationalHours;
+  }
+
+    setActiveTab(tabId) {
+        const links = document.querySelectorAll('.tab-links a');
+        links.forEach(link => {
+            if (link.href.endsWith(`#${tabId}`) || link.href.includes('#businesses/')) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
     }
 }
 

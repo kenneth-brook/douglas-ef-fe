@@ -98,7 +98,26 @@ export const shopForm = () => {
         </div>
       </div>
       
-      <!-- Shop Specific Section -->
+      <!-- Menu Selection Section -->
+      <div class="form-section" id="menu-selection-section">
+        <div style="display: flex; flex-direction: row; gap: 20px; width: 100%;">
+          <div class="form-group">
+            <label for="menuType">Menu Type:</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <select id="menuType" name="menuType"></select>
+              <button type="button" id="add-menu-type">Add Selection</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="newMenuType">New Menu Type:</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="text" id="newMenuType" name="newMenuType">
+              <button type="button" id="add-new-menu-type">Add</button>
+            </div>
+          </div>
+        </div>
+        <ul id="menu-type-list"></ul>
+      </div>
       <div class="form-section">
         <h3>Operational Hours</h3>
         <table class="hours-table">
@@ -492,34 +511,6 @@ export const initializeShopForm = async (formContainer) => {
   attachImageUploadHandler(formContainer);
   initializeTinyMCE('#description');
   attachSpecialDayHandlers(formContainer);
-
-  // Initialize hour and menu selection handlers
-  //const sectionContainer = formContainer.querySelector(`.form-section[data-id="hours"]`);
-  //if (!sectionContainer) {
-    //console.error(`Section container with id hours not found`);
-    //return;
-  //}
-
-  //const operationModelCheckboxes = sectionContainer.querySelectorAll('input[name="operationModel"]');
-  //const menuStyleCheckboxes = sectionContainer.querySelectorAll('input[name="menuStyle"]');
-
-  //if (operationModelCheckboxes.length > 0) {
-   // operationModelCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'operationModel', showDaySelection));
-    //});
-  //} else {
-    //console.error('Operation model checkboxes not found');
- // }
-
-  //if (menuStyleCheckboxes.length > 0) {
-    //menuStyleCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'menuStyle', showMenuSelection));
-    //});
-  //} else {
-    //console.error('Menu style checkboxes not found');
-  //}
-
-  // Initialize menu selection handlers
   await initializeMenuSelection(formContainer);
 }
 
@@ -612,7 +603,6 @@ window.updateTable = function() {
 
 export const initializeMenuSelection = async (formContainer) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');
-  const averageCostDropdown = formContainer.querySelector('#averageCost');
   const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
   const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
   const newMenuTypeInput = formContainer.querySelector('#newMenuType');
@@ -630,18 +620,6 @@ export const initializeMenuSelection = async (formContainer) => {
     });
   } else {
     console.error('Error fetching menu types:', fetchedMenuTypes);
-  }
-
-  const fetchedAverageCosts = await getAverageCosts();
-  if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
-    fetchedAverageCosts.forEach(cost => {
-      const option = document.createElement('option');
-      option.value = cost.id;
-      option.textContent = `${cost.symbol} - ${cost.description}`;
-      averageCostDropdown.appendChild(option);
-    });
-  } else {
-    console.error('Error fetching average costs:', fetchedAverageCosts);
   }
 
   addMenuTypeButton.addEventListener('click', () => {
@@ -697,7 +675,7 @@ export const initializeMenuSelection = async (formContainer) => {
 };
 
 export const getMenuTypes = async () => {
-  const tableName = `eat_type`;
+  const tableName = `shop_type`;
   try {
     const response = await apiService.fetch(`menu-types?table=${tableName}`);
     console.log('Fetched menu types:', response); // Logging the response
@@ -708,21 +686,8 @@ export const getMenuTypes = async () => {
   }
 };
 
-export const getAverageCosts = async () => {
-  const tableName = `eat_cost`;
-  try {
-    console.log(`Fetching average costs for table: ${tableName}`);
-    const response = await apiService.fetch(`average-costs?table=${tableName}`);
-    console.log('Fetched average costs:', response); // Logging the response
-    return response;
-  } catch (error) {
-    console.error(`Error fetching average costs:`, error);
-    return [];
-  }
-};
-
 export const addNewMenuType = async (newMenuType) => {
-  const tableName = `eat_type`;
+  const tableName = `shop_type`;
   try {
     const response = await apiService.fetch('menu-types', {
       method: 'POST',

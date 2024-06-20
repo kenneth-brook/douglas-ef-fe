@@ -1,6 +1,7 @@
 class Router {
   constructor() {
       this.routes = {};
+      this.initialLoad = true; // Add an initial load flag
       window.addEventListener('hashchange', this.loadCurrentRoute.bind(this));
       window.addEventListener('load', this.loadCurrentRoute.bind(this));
   }
@@ -15,7 +16,7 @@ class Router {
   }
 
   loadCurrentRoute() {
-      let path = window.location.hash.slice(1); // Get the current path without the hash symbol
+      let path = window.location.hash.slice(1) || 'businesses/list'; // Default to 'businesses/list'
       console.log(`Attempting to load route: ${path}`);
       let routeFound = false;
 
@@ -33,10 +34,12 @@ class Router {
           }
       }
 
-      if (!routeFound) {
+      if (!routeFound || this.initialLoad) {
           console.error('No route found for:', path);
-          this.navigate('businesses/list'); // Navigate to the intended default route
+          this.navigate('businesses/list'); // Navigate to the default route
       }
+
+      this.initialLoad = false; // Reset initial load flag
   }
 }
 

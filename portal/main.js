@@ -6,7 +6,7 @@ import TabManager from './components/tabManager.js';
 document.addEventListener('DOMContentLoaded', async () => {
     const store = new Store({});
     const router = new Router();
-    
+
     try {
         const apiService = new ApiService();
         console.log("API Service loaded");
@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const tabManager = new TabManager(store, apiService, router);
         console.log("TabManager initialized");
-        
-        router.loadCurrentRoute();
+
+        router.loadCurrentRoute(); // This will now force navigation to the default route on initial load
     } catch (error) {
         console.error("Failed to initialize tabs based on user role:", error);
         document.getElementById('content').innerHTML = '<p>Error loading the application. Please try again later.</p>';

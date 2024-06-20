@@ -511,34 +511,6 @@ export const initializePlayForm = async (formContainer) => {
   attachImageUploadHandler(formContainer);
   initializeTinyMCE('#description');
   attachSpecialDayHandlers(formContainer);
-
-  // Initialize hour and menu selection handlers
-  //const sectionContainer = formContainer.querySelector(`.form-section[data-id="hours"]`);
-  //if (!sectionContainer) {
-    //console.error(`Section container with id hours not found`);
-    //return;
-  //}
-
-  //const operationModelCheckboxes = sectionContainer.querySelectorAll('input[name="operationModel"]');
-  //const menuStyleCheckboxes = sectionContainer.querySelectorAll('input[name="menuStyle"]');
-
-  //if (operationModelCheckboxes.length > 0) {
-   // operationModelCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'operationModel', showDaySelection));
-    //});
-  //} else {
-    //console.error('Operation model checkboxes not found');
- // }
-
-  //if (menuStyleCheckboxes.length > 0) {
-    //menuStyleCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'menuStyle', showMenuSelection));
-    //});
-  //} else {
-    //console.error('Menu style checkboxes not found');
-  //}
-
-  // Initialize menu selection handlers
   await initializeMenuSelection(formContainer);
 }
 
@@ -631,7 +603,6 @@ window.updateTable = function() {
 
 export const initializeMenuSelection = async (formContainer) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');
-  const averageCostDropdown = formContainer.querySelector('#averageCost');
   const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
   const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
   const newMenuTypeInput = formContainer.querySelector('#newMenuType');

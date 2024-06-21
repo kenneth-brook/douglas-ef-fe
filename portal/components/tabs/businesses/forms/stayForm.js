@@ -102,14 +102,14 @@ export const stayForm = () => {
       <div class="form-section" id="menu-selection-section">
         <div style="display: flex; flex-direction: row; gap: 20px; width: 100%;">
           <div class="form-group">
-            <label for="menuType">Menu Type:</label>
+            <label for="menuType">Stay Type:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
               <select id="menuType" name="menuType"></select>
               <button type="button" id="add-menu-type">Add Selection</button>
             </div>
           </div>
           <div class="form-group">
-            <label for="newMenuType">New Menu Type:</label>
+            <label for="newMenuType">New Stay Type:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
               <input type="text" id="newMenuType" name="newMenuType">
               <button type="button" id="add-new-menu-type">Add</button>
@@ -422,37 +422,6 @@ export const initializeTinyMCE = (selector) => {
   });
 };
 
-
-export const attachSpecialDayHandlers = (formContainer) => {
-  const specialDays = [];
-  formContainer.querySelector('#add-day-button').addEventListener('click', () => {
-    const specialDayInput = formContainer.querySelector('#special-day');
-    const alteredHoursInput = formContainer.querySelector('#altered-hours');
-    const specialDay = specialDayInput.value.trim();
-    const alteredHours = alteredHoursInput.value.trim();
-
-    if (specialDay && alteredHours) {
-      specialDays.push({ day: specialDay, hours: alteredHours });
-
-      // Display the added special day and altered hours
-      const dayHoursList = formContainer.querySelector('#day-hours-list');
-      const listItem = document.createElement('div');
-      listItem.className = 'day-hours-item';
-      listItem.textContent = `${specialDay}: ${alteredHours}`;
-      dayHoursList.appendChild(listItem);
-
-      // Clear input fields
-      specialDayInput.value = '';
-      alteredHoursInput.value = '';
-    } else {
-      alert('Please fill both fields.');
-    }
-  });
-
-  // Attach specialDays array to formContainer for later use
-  formContainer.specialDays = specialDays;
-};
-
 /* Initialization Function */
 
 export const initializeStayForm = async (formContainer) => {
@@ -461,124 +430,8 @@ export const initializeStayForm = async (formContainer) => {
   attachLogoUploadHandler(formContainer);
   attachImageUploadHandler(formContainer);
   initializeTinyMCE('#description');
-  attachSpecialDayHandlers(formContainer);
-
-  // Initialize hour and menu selection handlers
-  //const sectionContainer = formContainer.querySelector(`.form-section[data-id="hours"]`);
-  //if (!sectionContainer) {
-    //console.error(`Section container with id hours not found`);
-    //return;
-  //}
-
-  //const operationModelCheckboxes = sectionContainer.querySelectorAll('input[name="operationModel"]');
-  //const menuStyleCheckboxes = sectionContainer.querySelectorAll('input[name="menuStyle"]');
-
-  //if (operationModelCheckboxes.length > 0) {
-   // operationModelCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'operationModel', showDaySelection));
-    //});
-  //} else {
-    //console.error('Operation model checkboxes not found');
- // }
-
-  //if (menuStyleCheckboxes.length > 0) {
-    //menuStyleCheckboxes.forEach((checkbox) => {
-      //checkbox.addEventListener('click', () => selectOnlyThis(checkbox, 'menuStyle', showMenuSelection));
-    //});
-  //} else {
-    //console.error('Menu style checkboxes not found');
-  //}
-
-  // Initialize menu selection handlers
   await initializeMenuSelection(formContainer);
 }
-
-export const showDaySelection = (checkbox) => {
-  const container = checkbox.closest('.form-group-container');
-  const daySelectionContainer = container.querySelector('#daySelectionContainer');
-  console.log('showDaySelection:', daySelectionContainer);
-  if (daySelectionContainer) {
-    if (checkbox.value !== '24/7') {
-      daySelectionContainer.style.display = 'block';
-    } else {
-      daySelectionContainer.style.display = 'none';
-    }
-  } else {
-    console.error('Day selection container not found');
-  }
-};
-
-export const showMenuSelection = (checkbox) => {
-  const container = checkbox.closest('.form-group-container');
-  const menuSelectionContainer = container.querySelector('#menuSelectionContainer');
-  console.log('showMenuSelection:', menuSelectionContainer);
-  if (menuSelectionContainer) {
-    if (checkbox.value === 'MultipleMenus') {
-      menuSelectionContainer.style.display = 'block';
-    } else {
-      menuSelectionContainer.style.display = 'none';
-    }
-  } else {
-    console.error('Menu selection container not found');
-  }
-};
-
-window.updateTable = function() {
-  const operationModel = document.querySelector('input[name="operationModel"]:checked');
-  const menuStyle = document.querySelector('input[name="menuStyle"]:checked');
-  const daysOpen = Array.from(document.querySelectorAll('input[name="daysOpen"]:checked')).map(cb => cb.value);
-  const menuTypes = Array.from(document.querySelectorAll('input[name="menuType"]:checked')).map(cb => cb.value);
-
-  const tableContainer = document.getElementById('scheduleTableContainer');
-  const tableHeader = document.getElementById('scheduleTableHeader');
-  const tableBody = document.querySelector('#scheduleTable tbody');
-  tableBody.innerHTML = ''; // Clear existing table rows
-
-  if (!operationModel || !menuStyle || (menuStyle.value === 'MultipleMenus' && menuTypes.length === 0)) {
-    tableContainer.style.display = 'none';
-    return;
-  }
-
-  tableContainer.style.display = 'block';
-
-  const days = operationModel.value === '7Days/SelectHours' ? ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'] : daysOpen;
-
-  // Create table header
-  tableHeader.innerHTML = '<th>Day/Menu</th>';
-  if (menuStyle.value === 'MultipleMenus') {
-    menuTypes.forEach(menu => {
-      const th = document.createElement('th');
-      th.textContent = menu;
-      tableHeader.appendChild(th);
-    });
-  } else {
-    const th = document.createElement('th');
-    th.textContent = 'Hours Open';
-    tableHeader.appendChild(th);
-  }
-
-  // Create table rows
-  days.forEach(day => {
-    const row = document.createElement('tr');
-    const dayCell = document.createElement('td');
-    dayCell.textContent = day;
-    row.appendChild(dayCell);
-
-    if (menuStyle.value === 'MultipleMenus') {
-      menuTypes.forEach(() => {
-        const inputCell = document.createElement('td');
-        inputCell.innerHTML = '<input type="text" name="hoursOpen">';
-        row.appendChild(inputCell);
-      });
-    } else {
-      const inputCell = document.createElement('td');
-      inputCell.innerHTML = '<input type="text" name="hoursOpen">';
-      row.appendChild(inputCell);
-    }
-
-    tableBody.appendChild(row);
-  });
-};
 
 export const initializeMenuSelection = async (formContainer) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');
@@ -667,7 +520,7 @@ export const initializeMenuSelection = async (formContainer) => {
 };
 
 export const getMenuTypes = async () => {
-  const tableName = `eat_type`;
+  const tableName = `stay_type`;
   try {
     const response = await apiService.fetch(`menu-types?table=${tableName}`);
     console.log('Fetched menu types:', response); // Logging the response
@@ -679,7 +532,7 @@ export const getMenuTypes = async () => {
 };
 
 export const getAverageCosts = async () => {
-  const tableName = `eat_cost`;
+  const tableName = `stay_cost`;
   try {
     console.log(`Fetching average costs for table: ${tableName}`);
     const response = await apiService.fetch(`average-costs?table=${tableName}`);
@@ -692,7 +545,7 @@ export const getAverageCosts = async () => {
 };
 
 export const addNewMenuType = async (newMenuType) => {
-  const tableName = `eat_type`;
+  const tableName = `stay_type`;
   try {
     const response = await apiService.fetch('menu-types', {
       method: 'POST',

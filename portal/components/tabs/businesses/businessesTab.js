@@ -236,7 +236,15 @@ class BusinessesTab {
                     }
 
                     if (type === 'stay') {
-                        // Add stay-specific fields
+                      detailsFormData.append('menuTypes', formData.get('menuTypes'));
+                      detailsFormData.append('averageCost', formData.get('averageCost'));
+  
+                      try {
+                          const stayResponse = await this.apiService.submitStayForm(detailsFormData);
+                          console.log('Play form data submitted', stayResponse);
+                      } catch (error) {
+                          console.error('Error submitting play form:', error);
+                      }
                     }
 
                     // Redirect to the list view upon successful submission

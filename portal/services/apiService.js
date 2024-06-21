@@ -81,6 +81,17 @@ class ApiService {
     });
     return response;
   }
+
+  async submitStayForm(formData) {
+    const response = await this.fetch('stay-form-submission', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    return response;
+  }
 }
 
 export default ApiService;

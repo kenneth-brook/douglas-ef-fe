@@ -152,7 +152,7 @@ const getUniqueFilename = (filename) => {
 
 const uploadFilesToDreamHost = async (formData) => {
     try {
-        const response = await fetch('https://dev.365easyflow.com/easyflow-images/upload.php', {
+        const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
             method: 'POST',
             body: formData,
         });

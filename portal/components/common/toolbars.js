@@ -23,15 +23,25 @@ export const createBusinessToolbar = (router) => {
     return toolbar;
 };
 
-export const createEventsToolbar = () => {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'toolbar';
-    toolbar.innerHTML = `
+export const createEventsToolbar = (router) => {
+    const eventToolbar = document.createElement('div');
+    eventToolbar.className = 'eventToolbar';
+    eventToolbar.innerHTML = `
         <input type="text" placeholder="Search events..." class="search-box">
-        <button class="add-new">Add New Event</button>
+        <select class="sort-dropdown">
+            <option value="name">Sort by Name</option>
+            <option value="rating">Date</option>
+        </select>
+        <button class="sort-button">Sort</button>
+        <button class="add-new-event">Add New Events</button>
     `;
-    console.log("Creating events toolbar");
-    return toolbar;
+
+    eventToolbar.querySelector('.add-new-event').addEventListener('click', () => {
+        console.log('Navigating to events/add');
+        router.navigate('events/add');
+    });
+
+    return eventToolbar;
 };
 
 export const createOfficeContentToolbar = () => {

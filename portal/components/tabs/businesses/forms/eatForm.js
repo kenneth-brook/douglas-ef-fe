@@ -220,37 +220,34 @@ async function handleAutofill() {
 export const attachSocialMediaHandler = (formContainer) => {
     const addButton = formContainer.querySelector('#add-social-media');
     const socialMediaList = formContainer.querySelector('#social-media-list');
-    const socialMediaPairs = [];
-
-    if (!addButton || !socialMediaList) {
-        console.error('One or more elements not found for Social Media handlers');
-        return;
+    const platformInput = formContainer.querySelector('#socialPlatform');
+    const addressInput = formContainer.querySelector('#socialAddress');
+  
+    if (!addButton || !socialMediaList || !platformInput || !addressInput) {
+      console.error('One or more elements not found for Social Media handlers');
+      return;
     }
-
+  
+    const socialMediaPairs = [];
+  
     addButton.addEventListener('click', () => {
-        const platformInput = formContainer.querySelector('#socialPlatform');
-        const addressInput = formContainer.querySelector('#socialAddress');
-
-        if (!platformInput || !addressInput) {
-            console.error('Social media inputs not found');
-            return;
-        }
-
-        const platform = platformInput.value.trim();
-        const address = addressInput.value.trim();
-
-        if (platform && address) {
-            socialMediaPairs.push({ platform, address });
-            const listItem = document.createElement('li');
-            listItem.textContent = `${platform}: ${address}`;
-            socialMediaList.appendChild(listItem);
-
-            // Clear inputs
-            platformInput.value = '';
-            addressInput.value = '';
-        }
+      const platform = platformInput.value.trim();
+      const address = addressInput.value.trim();
+  
+      if (platform && address) {
+        socialMediaPairs.push({ platform, address });
+        const listItem = document.createElement('li');
+        listItem.textContent = `${platform}: ${address}`;
+        listItem.dataset.platform = platform;
+        listItem.dataset.address = address;
+        socialMediaList.appendChild(listItem);
+  
+        // Clear inputs
+        platformInput.value = '';
+        addressInput.value = '';
+      }
     });
-
+  
     // Store the social media pairs in the form container for later retrieval
     formContainer.socialMediaPairs = socialMediaPairs;
 };
@@ -434,54 +431,13 @@ export const attachSpecialDayHandlers = (formContainer) => {
 };
 
 export const initializeEatForm = async (formContainer) => {
-  // Ensure DOM is fully loaded
-  await new Promise((resolve) => {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', resolve);
-    } else {
-      resolve();
-    }
-  });
-
-  // Wrap each handler in a promise
-  const attachCoordinatesHandlerPromise = new Promise((resolve) => {
     attachCoordinatesHandler(formContainer);
-    resolve();
-  });
-
-  const attachSocialMediaHandlerPromise = new Promise((resolve) => {
     attachSocialMediaHandler(formContainer);
-    resolve();
-  });
-
-  const attachLogoUploadHandlerPromise = new Promise((resolve) => {
     attachLogoUploadHandler(formContainer);
-    resolve();
-  });
-
-  const attachImageUploadHandlerPromise = new Promise((resolve) => {
     attachImageUploadHandler(formContainer);
-    resolve();
-  });
-
-  const attachSpecialDayHandlersPromise = new Promise((resolve) => {
-    attachSpecialDayHandlers(formContainer);
-    resolve();
-  });
-
-  // Wait for all handlers to complete
-  await Promise.all([
-    attachCoordinatesHandlerPromise,
-    attachSocialMediaHandlerPromise,
-    attachLogoUploadHandlerPromise,
-    attachImageUploadHandlerPromise,
-    attachSpecialDayHandlersPromise,
-    initializeMenuSelection(formContainer) // This already returns a promise
-  ]);
-
-  // Initialize TinyMCE after all handlers are complete
-  await initializeTinyMCE('textarea#description');
-};
+    initializeTinyMCE('#description');
+    await initializeMenuSelection(formContainer);
+}
 
 
 const initializeTinyMCE = (selector) => {

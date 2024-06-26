@@ -1,14 +1,24 @@
-// src/components/tabs/events/ListEvents.js
-class ListEvents {
-    constructor() {
-        this.container = document.createElement('div');
-    }
+import { createEventsToolbar } from '../../common/toolbars.js';
 
-    render() {
-        this.container.innerHTML = `<div>All events listed here with options to edit or delete each entry.</div>`;
-        // More interactive features and complex state handling can be added here
-        return this.container;
-    }
+class ListEvents {
+  constructor(router) {
+    this.router = router;
+    this.container = document.createElement('div');
+  }
+
+  render() {
+    console.log('ListEvents render called with router:', this.router);
+
+    this.container.innerHTML = `<div>All events listed here with options to edit or delete each entry.</div>`;
+
+    // Create and append the toolbar with the router
+    const toolbar = createEventsToolbar(this.router);
+    this.container.prepend(toolbar);
+
+    // Add more complex rendering and event listeners here
+    return this.container;
+  }
 }
 
 export default ListEvents;
+

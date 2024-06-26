@@ -5,7 +5,7 @@ import OfficeTab from './tabs/office/officeTab.js';
 class TabManager {
   constructor(store, apiService, router) {
     this.store = store;
-    this.apiService = apiService; // Store the instance of ApiService
+    this.apiService = apiService;
     this.router = router;
     this.tabs = [];
     this.tabContainer = document.querySelector('.tab-links');

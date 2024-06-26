@@ -92,6 +92,17 @@ class ApiService {
     });
     return response;
   }
+
+  async submitEventForm(formData) {
+    const response = await this.fetch('event-form-submission', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    return response;
+  }
 }
 
 export default ApiService;

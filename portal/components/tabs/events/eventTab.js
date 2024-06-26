@@ -1,36 +1,41 @@
-// Assuming AddEvent.js, EditEvent.js, and ListEvents.js are defined in the same directory
-//import AddEvent from './AddEvent.js';
-//import EditEvent from './EditEvent.js';
+import { eventForm, initializeEventForm } from './eventForm.js';
 import ListEvents from './listEvents.js';
 
 class EventsTab {
-  constructor(router) {
+  constructor(router, apiService) {
     this.router = router;
+    this.apiService = apiService;
     this.setupRoutes();
   }
 
   setupRoutes() {
     this.router.addRoute('events/add', () => this.showAddEvent());
-    this.router.addRoute('events/edit', () => this.showEditEvent());
+    this.router.addRoute('events/edit/:id', id => this.showEditEvent(id));
     this.router.addRoute('events/list', () => this.showListEvents());
-    // Default sub-route for 'events'
-    this.router.addRoute('events', () => this.showListEvents());
   }
 
   showAddEvent() {
-    const view = new AddEvent();
-    document.querySelector('.tab-content').innerHTML = '';
-    document.querySelector('.tab-content').appendChild(view.render());
+    const contentArea = document.querySelector('.tab-content');
+    if (!contentArea) {
+      console.error("Content area element not found");
+      return;
+    }
+    contentArea.innerHTML = eventForm();
+    initializeEventForm(contentArea, this.apiService);
   }
 
-  showEditEvent() {
-    const view = new EditEvent();
-    document.querySelector('.tab-content').innerHTML = '';
-    document.querySelector('.tab-content').appendChild(view.render());
+  showEditEvent(id) {
+    const contentArea = document.querySelector('.tab-content');
+    if (!contentArea) {
+      console.error("Content area element not found");
+      return;
+    }
+    contentArea.innerHTML = `<div>Edit Event with ID: ${id}</div>`;
+    // Add logic to load and initialize the edit form
   }
 
   showListEvents() {
-    const view = new ListEvents();
+    const view = new ListEvents(this.router);
     document.querySelector('.tab-content').innerHTML = '';
     document.querySelector('.tab-content').appendChild(view.render());
   }

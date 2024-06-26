@@ -55,7 +55,7 @@
     display: block;
 }
 
-.toolbar {
+.toolbar, .eventToolbar {
     padding: 20px;
     background-color: #88C0E1;
     border-radius: 5px;

@@ -1,3 +1,4 @@
+// main.js
 import Router from './services/router.js';
 import Store from './services/store.js';
 import ApiService from './services/apiService.js';
@@ -10,14 +11,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const apiService = new ApiService();
         console.log("API Service loaded");
-        const userData = await apiService.fetch('user-role');
 
+        const userData = await apiService.fetch('user-role');
         if (!userData.role) {
             throw new Error('Role data is missing');
         }
 
         console.log("User role fetched:", userData.role);
-        
+        store.setUserRole(userData.role);
+
+        const data = await apiService.fetchData();
+        console.log('Fetched Data:', data);
+        store.setData(data);
+
         const tabManager = new TabManager(store, apiService, router);
         console.log("TabManager initialized");
 

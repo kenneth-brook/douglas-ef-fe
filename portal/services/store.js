@@ -1,3 +1,4 @@
+// store.js
 class Store {
     constructor(initialState) {
         this.state = initialState || {};
@@ -21,10 +22,14 @@ class Store {
         return this.state.userRole;
     }
 
+    setData(data) {
+        this.updateState({ data });
+    }
+
     subscribe(listener) {
         this.listeners.push(listener);
         return () => {
-            this.listeners = this.listeners.filter(l => l !== listener); // Return an unsubscribe function
+            this.listeners = this.listeners.filter(l => l !== listener);
         };
     }
 }

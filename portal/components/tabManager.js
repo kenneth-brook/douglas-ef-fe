@@ -14,9 +14,9 @@ class TabManager {
 
   setupTabs() {
     console.log("Setting up tabs");
-    this.tabs.push({ id: 'businesses/list', title: 'Businesses', instance: new BusinessesTab(this.router, this.apiService) });
-    this.tabs.push({ id: 'events/list', title: 'Events', instance: new EventsTab(this.router, this.apiService) });
-    this.tabs.push({ id: 'office/list', title: 'Office', instance: new OfficeTab(this.router, this.apiService) });
+    this.tabs.push({ id: 'businesses/list', title: 'Businesses', instance: new BusinessesTab(this.router, this.apiService, this.store) });
+    this.tabs.push({ id: 'events/list', title: 'Events', instance: new EventsTab(this.router, this.apiService, this.store) });
+    this.tabs.push({ id: 'office/list', title: 'Office', instance: new OfficeTab(this.router, this.apiService, this.store) });
 
     this.renderTabs();
 

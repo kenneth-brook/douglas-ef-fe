@@ -1,10 +1,12 @@
+// eventsTab.js
 import { eventForm, initializeEventForm } from './eventForm.js';
 import ListEvents from './listEvents.js';
 
 class EventsTab {
-  constructor(router, apiService) {
+  constructor(router, apiService, store) {
     this.router = router;
     this.apiService = apiService;
+    this.store = store;
     this.setupRoutes();
   }
 
@@ -35,9 +37,10 @@ class EventsTab {
   }
 
   showListEvents() {
-    const view = new ListEvents(this.router);
-    document.querySelector('.tab-content').innerHTML = '';
-    document.querySelector('.tab-content').appendChild(view.render());
+    const view = new ListEvents(this.router, this.store);
+    const contentArea = document.querySelector('.tab-content');
+    contentArea.innerHTML = '';
+    contentArea.appendChild(view.render());
   }
 }
 

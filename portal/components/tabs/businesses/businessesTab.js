@@ -45,8 +45,11 @@ class BusinessesTab {
     contentArea.innerHTML = '';
 
     // Retrieve business data from the store
-    const businesses = this.store.getState().businesses || [];
+    console.log(`This is store ${JSON.stringify(this.store.state.data.combined)}`)
+    const businesses = this.store.state.data.combined || [];
+    console.log(`This is businesses ${businesses}`)
     const businessData = businesses.find(business => business.id == id);
+    console.log(`This is businessData ${businessData}`)
 
     if (!businessData) {
       console.error(`Business data for ID ${id} not found in store`);

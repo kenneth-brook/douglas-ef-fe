@@ -445,7 +445,7 @@ export const initializeEatForm = async (formContainer, data = null) => {
   }
 };
 
-const populateEatForm = (formContainer, data) => {
+const populateEatForm = async (formContainer, data) => {
   Object.keys(data).forEach(key => {
     const input = formContainer.querySelector(`[name="${key}"]`);
     if (input) {
@@ -461,7 +461,6 @@ const populateEatForm = (formContainer, data) => {
     }
   });
 
-  // Handle special cases for social platforms, menu types, images, etc.
   if (data.social_platforms) {
     const socialMediaList = formContainer.querySelector('#social-media-list');
     data.social_platforms.forEach(platform => {
@@ -471,23 +470,147 @@ const populateEatForm = (formContainer, data) => {
     });
   }
 
-  if (data.menuTypes) {
+  if (data.menu_types) {
     const menuTypeList = formContainer.querySelector('#menu-type-list');
-    data.menuTypes.forEach(type => {
-      const listItem = document.createElement('li');
-      listItem.textContent = type.name;
-      menuTypeList.appendChild(listItem);
+    const fetchedMenuTypes = await getMenuTypes();
+    data.menu_types.forEach(typeId => {
+      const type = fetchedMenuTypes.find(t => t.id === typeId);
+      if (type) {
+        const listItem = document.createElement('li');
+        listItem.textContent = type.name;
+        listItem.dataset.id = type.id;
+
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.className = 'remove-button';
+        removeButton.addEventListener('click', () => {
+          const index = data.menu_types.indexOf(type.id);
+          if (index > -1) {
+            data.menu_types.splice(index, 1);
+          }
+          menuTypeList.removeChild(listItem);
+        });
+
+        listItem.appendChild(removeButton);
+        menuTypeList.appendChild(listItem);
+      }
     });
   }
 
-  if (data.imageUrls) {
+  if (data.images) {
     const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
-    data.imageUrls.forEach(url => {
+    const imageFileListContainer = formContainer.querySelector('#image-file-list');
+
+    data.images.forEach(url => {
+      const uniqueFilename = url.split('/').pop();
+      const displayFilename = uniqueFilename.replace(/^\d{8}T\d{9}Z_/, ''); // Remove date string from display
+      const imgSrc = `https://douglas.365easyflow.com/easyflow-images/${url}`;
       const img = document.createElement('img');
-      img.src = url;
+      img.src = imgSrc;
       img.className = 'thumbnail';
-      imageThumbnailsContainer.appendChild(img);
+
+      const thumbnailContainer = document.createElement('div');
+      thumbnailContainer.className = 'thumbnail-container';
+      thumbnailContainer.dataset.source = 'database'; // Custom attribute to denote DB image
+      
+      img.addEventListener('mouseover', () => {
+        const enlargeImg = document.createElement('img');
+        enlargeImg.src = imgSrc;
+        enlargeImg.className = 'enlarge-thumbnail';
+        document.body.appendChild(enlargeImg);
+
+        img.addEventListener('mousemove', (event) => {
+          enlargeImg.style.top = `${event.clientY + 15}px`;
+          enlargeImg.style.left = `${event.clientX + 15}px`;
+        });
+
+        img.addEventListener('mouseout', () => {
+          document.body.removeChild(enlargeImg);
+        });
+      });
+
+      const removeButton = document.createElement('button');
+      removeButton.textContent = 'Remove';
+      removeButton.className = 'remove-button';
+      removeButton.addEventListener('click', () => {
+        const index = data.images.indexOf(url);
+        if (index > -1) {
+          data.images.splice(index, 1);
+        }
+        imageThumbnailsContainer.removeChild(thumbnailContainer);
+        imageFileListContainer.removeChild(listItem);
+      });
+
+      thumbnailContainer.appendChild(img);
+      thumbnailContainer.appendChild(removeButton);
+      imageThumbnailsContainer.appendChild(thumbnailContainer);
+
+      const listItem = document.createElement('li');
+      listItem.textContent = displayFilename;
+      listItem.dataset.originalFilename = uniqueFilename; // Store original filename for processing
+      imageFileListContainer.appendChild(listItem);
     });
+  }
+
+  if (data.logo) {
+    const logoPreviewContainer = formContainer.querySelector('#logo-preview');
+    const imgSrc = `https://douglas.365easyflow.com/easyflow-images/${data.logo}`;
+    const displayFilename = data.logo.replace(/^\d{15}_/, ''); // Remove date string from display
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    img.className = 'thumbnail';
+
+    img.addEventListener('mouseover', () => {
+      const enlargeImg = document.createElement('img');
+      enlargeImg.src = imgSrc;
+      enlargeImg.className = 'enlarge-thumbnail';
+      document.body.appendChild(enlargeImg);
+
+      img.addEventListener('mousemove', (event) => {
+        enlargeImg.style.top = `${event.clientY + 15}px`;
+        enlargeImg.style.left = `${event.clientX + 15}px`;
+      });
+
+      img.addEventListener('mouseout', () => {
+        document.body.removeChild(enlargeImg);
+      });
+    });
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-button';
+    removeButton.addEventListener('click', () => {
+      formContainer.logoUrl = '';
+      logoPreviewContainer.innerHTML = '';
+    });
+
+    logoPreviewContainer.appendChild(img);
+    logoPreviewContainer.appendChild(removeButton);
+  }
+
+  // Set specific fields manually if they are not auto-populated
+  formContainer.querySelector('#businessId').value = data.id;
+  formContainer.querySelector('#businessName').value = data.name;
+  formContainer.querySelector('#streetAddress').value = data.street_address;
+  formContainer.querySelector('#mailingAddress').value = data.mailing_address;
+  formContainer.querySelector('#city').value = data.city;
+  formContainer.querySelector('#state').value = data.state;
+  formContainer.querySelector('#zipCode').value = data.zip;
+  formContainer.querySelector('#latitude').value = data.lat;
+  formContainer.querySelector('#longitude').value = data.long;
+  formContainer.querySelector('#phone').value = data.phone;
+  formContainer.querySelector('#email').value = data.email;
+  formContainer.querySelector('#website').value = data.web;
+  formContainer.querySelector('#description').value = data.description;
+
+  if (data.active) {
+    formContainer.querySelector('#active-toggle').checked = true;
+    document.getElementById('toggle-status').textContent = 'Active';
+    document.getElementById('toggle-status').style.color = 'green';
+  } else {
+    formContainer.querySelector('#active-toggle').checked = false;
+    document.getElementById('toggle-status').textContent = 'Inactive';
+    document.getElementById('toggle-status').style.color = 'red';
   }
 };
 
@@ -574,6 +697,8 @@ export const initializeMenuSelection = async (formContainer) => {
   function createMenuListItem(name, id) {
     const listItem = document.createElement('li');
     listItem.textContent = name;
+    listItem.dataset.id = id;
+
     const removeButton = document.createElement('button');
     removeButton.textContent = 'x';
     removeButton.style.color = 'red';
@@ -585,6 +710,7 @@ export const initializeMenuSelection = async (formContainer) => {
         menuTypes.splice(index, 1);
       }
     });
+
     listItem.appendChild(removeButton);
     return listItem;
   }

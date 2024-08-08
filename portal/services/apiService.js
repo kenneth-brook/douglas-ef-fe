@@ -1,4 +1,3 @@
-// apiService.js
 class ApiService {
   constructor() {
     this.baseURL = 'https://8pz5kzj96d.execute-api.us-east-1.amazonaws.com/Prod/';
@@ -16,13 +15,16 @@ class ApiService {
       }
 
       const responseBody = await response.text();
+      console.log('Raw response:', responseBody); // Debugging statement
 
       try {
         return JSON.parse(responseBody);
       } catch (jsonError) {
-        throw jsonError;
+        console.error('Error parsing JSON:', jsonError);
+        throw new Error(`Response is not valid JSON: ${responseBody}`);
       }
     } catch (error) {
+      console.error('Fetch error:', error);
       throw error;
     }
   }

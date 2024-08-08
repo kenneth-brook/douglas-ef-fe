@@ -1,7 +1,11 @@
-// forms/eatForm.js
-
 import ApiService from '../../../../services/apiService.js';
-import config from '../../../../utils/config.js';
+import { attachCoordinatesHandler } from './formHelpers/coordinatesHelper.js';
+import { attachSocialMediaHandler } from './formHelpers/socialMediaHelper.js';
+import { attachLogoUploadHandler } from './formHelpers/logoUploadHelper.js';
+import { attachImageUploadHandler } from './formHelpers/imageUploadHelper.js';
+import { attachSpecialDayHandlers } from './formHelpers/specialDayHelper.js';
+import { initializeMenuSelection } from './formHelpers/menuSelectionHelper.js';
+import { initializeTinyMCE } from './formHelpers/tinyMCEHelper.js';
 
 const apiService = new ApiService();
 
@@ -147,303 +151,75 @@ export const eatForm = () => {
   `;
 };
 
-const getUniqueFilename = (filename) => {
-  const date = new Date().toISOString().replace(/[-:.]/g, '');
-  return `${date}_${filename}`;
-};
-
-const uploadFilesToDreamHost = async (formData) => {
-  try {
-    const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const responseBody = await response.text();
-    const result = JSON.parse(responseBody);
-
-    if (result.length === 0) {
-      throw new Error('Upload to DreamHost failed: empty result');
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error uploading files:', error);
-    throw error;
-  }
-};
-
-export const attachCoordinatesHandler = (formContainer) => {
-  const autofillButton = formContainer.querySelector('#autofill-button');
-  if (autofillButton) {
-    autofillButton.addEventListener('click', handleAutofill);
-  }
-};
-
-async function handleAutofill() {
-  const streetAddress = document.getElementById('streetAddress').value;
-  const city = document.getElementById('city').value;
-  const state = document.getElementById('state').value;
-  const zipCode = document.getElementById('zipCode').value;
-
-  if (!streetAddress || !city || !state || !zipCode) {
-    alert("Please fill in all address fields.");
-    return;
-  }
-
-  const address = `${streetAddress}, ${city}, ${state}, ${zipCode}`;
-  const apiKey = config.google;
-
-  if (!apiKey) {
-    console.error("API key is missing");
-    return;
-  }
-
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status === 'OK') {
-      const location = data.results[0].geometry.location;
-      document.getElementById('latitude').value = location.lat;
-      document.getElementById('longitude').value = location.lng;
-    } else {
-      console.error("Geocode was not successful for the following reason:", data.status);
-      alert(`Geocode was not successful for the following reason: ${data.status}`);
-    }
-  } catch (error) {
-    console.error("Error fetching geocode data:", error);
-    alert("Error fetching geocode data. Please try again later.");
-  }
-}
-
-export const attachSocialMediaHandler = (formContainer) => {
-  const addButton = formContainer.querySelector('#add-social-media');
-  const socialMediaList = formContainer.querySelector('#social-media-list');
-  const platformInput = formContainer.querySelector('#socialPlatform');
-  const addressInput = formContainer.querySelector('#socialAddress');
-
-  if (!addButton || !socialMediaList || !platformInput || !addressInput) {
-    console.error('One or more elements not found for Social Media handlers');
-    return;
-  }
-
-  const socialMediaPairs = [];
-
-  addButton.addEventListener('click', () => {
-    const platform = platformInput.value.trim();
-    const address = addressInput.value.trim();
-
-    if (platform && address) {
-      socialMediaPairs.push({ platform, address });
-      const listItem = document.createElement('li');
-      listItem.textContent = `${platform}: ${address}`;
-      listItem.dataset.platform = platform;
-      listItem.dataset.address = address;
-      socialMediaList.appendChild(listItem);
-
-      // Clear inputs
-      platformInput.value = '';
-      addressInput.value = '';
-    }
-  });
-
-  // Store the social media pairs in the form container for later retrieval
-  formContainer.socialMediaPairs = socialMediaPairs;
-};
-
-export const attachLogoUploadHandler = (formContainer) => {
-  const logoUploadInput = formContainer.querySelector('#logoUpload');
-  const logoPreviewContainer = formContainer.querySelector('#logo-preview');
-
-  if (logoUploadInput) {
-    logoUploadInput.addEventListener('change', async () => {
-      const file = logoUploadInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          logoPreviewContainer.innerHTML = '';
-
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.alt = file.name;
-          img.className = 'thumbnail';
-
-          img.addEventListener('mouseover', () => {
-            const enlargeImg = document.createElement('img');
-            enlargeImg.src = img.src;
-            enlargeImg.className = 'enlarge-thumbnail';
-            document.body.appendChild(enlargeImg);
-
-            img.addEventListener('mousemove', (event) => {
-              enlargeImg.style.top = `${event.clientY + 15}px`;
-              enlargeImg.style.left = `${event.clientX + 15}px`;
-            });
-
-            img.addEventListener('mouseout', () => {
-              document.body.removeChild(enlargeImg);
-            });
-          });
-
-          const removeButton = document.createElement('button');
-          removeButton.textContent = 'Remove';
-          removeButton.className = 'remove-button';
-          removeButton.addEventListener('click', () => {
-            logoPreviewContainer.innerHTML = '';
-            formContainer.logoUrl = '';
-          });
-
-          logoPreviewContainer.appendChild(img);
-          logoPreviewContainer.appendChild(removeButton);
-        };
-        reader.readAsDataURL(file);
-
-        // Upload file to DreamHost
-        const uniqueFilename = getUniqueFilename(file.name);
-        const logoFormData = new FormData();
-        logoFormData.append('imageFiles[]', file, uniqueFilename);
-
-        try {
-          const uploadResult = await uploadFilesToDreamHost(logoFormData);
-          if (uploadResult && uploadResult[0]) {
-            formContainer.logoUrl = `uploads/${uniqueFilename}`;
-            console.log('Logo URL:', formContainer.logoUrl);
-          } else {
-            console.error('Failed to upload logo:', uploadResult);
-          }
-        } catch (error) {
-          console.error('Error during logo upload:', error);
-        }
-      }
-    });
-  }
-};
-
-export const attachImageUploadHandler = (formContainer) => {
-  const imageUploadInput = formContainer.querySelector('#imageUpload');
-  const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
-  const imageFileListContainer = formContainer.querySelector('#image-file-list');
-
-  formContainer.imageUrls = [];
-
-  if (imageUploadInput) {
-    imageUploadInput.addEventListener('change', async () => {
-      const files = imageUploadInput.files;
-
-      for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const thumbnailContainer = document.createElement('div');
-          thumbnailContainer.className = 'thumbnail-container';
-
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.alt = file.name;
-          img.className = 'thumbnail';
-
-          img.addEventListener('mouseover', () => {
-            const enlargeImg = document.createElement('img');
-            enlargeImg.src = img.src;
-            enlargeImg.className = 'enlarge-thumbnail';
-            document.body.appendChild(enlargeImg);
-
-            img.addEventListener('mousemove', (event) => {
-              enlargeImg.style.top = `${event.clientY + 15}px`;
-              enlargeImg.style.left = `${event.clientX + 15}px`;
-            });
-
-            img.addEventListener('mouseout', () => {
-              document.body.removeChild(enlargeImg);
-            });
-          });
-
-          const removeButton = document.createElement('button');
-          removeButton.textContent = 'Remove';
-          removeButton.className = 'remove-button';
-          removeButton.addEventListener('click', () => {
-            const index = formContainer.imageUrls.indexOf(file.name);
-            if (index > -1) {
-              formContainer.imageUrls.splice(index, 1);
-            }
-            imageThumbnailsContainer.removeChild(thumbnailContainer);
-            imageFileListContainer.removeChild(listItem);
-          });
-
-          thumbnailContainer.appendChild(img);
-          thumbnailContainer.appendChild(removeButton);
-          imageThumbnailsContainer.appendChild(thumbnailContainer);
-
-          const listItem = document.createElement('li');
-          listItem.textContent = file.name;
-          imageFileListContainer.appendChild(listItem);
-        };
-        reader.readAsDataURL(file);
-
-        const uniqueFilename = getUniqueFilename(file.name);
-        const imageFormData = new FormData();
-        imageFormData.append('imageFiles[]', file, uniqueFilename);
-
-        try {
-          const uploadResult = await uploadFilesToDreamHost(imageFormData);
-          if (uploadResult && uploadResult[0]) {
-            formContainer.imageUrls.push(`uploads/${uniqueFilename}`);
-            console.log('Image URLs:', formContainer.imageUrls);
-          } else {
-            console.error('Failed to upload image:', uploadResult);
-          }
-        } catch (error) {
-          console.error('Error during image upload:', error);
-        }
-      }
-    });
-  }
-};
-
-export const attachSpecialDayHandlers = (formContainer) => {
-  const specialDays = [];
-  const addDayButton = formContainer.querySelector('#add-day-button');
-
-  if (addDayButton) {
-    addDayButton.addEventListener('click', () => {
-      const specialDayInput = formContainer.querySelector('#special-day');
-      const alteredHoursInput = formContainer.querySelector('#altered-hours');
-      const specialDay = specialDayInput.value.trim();
-      const alteredHours = alteredHoursInput.value.trim();
-
-      if (specialDay && alteredHours) {
-        specialDays.push({ day: specialDay, hours: alteredHours });
-
-        const dayHoursList = formContainer.querySelector('#day-hours-list');
-        const listItem = document.createElement('div');
-        listItem.className = 'day-hours-item';
-        listItem.textContent = `${specialDay}: ${alteredHours}`;
-        dayHoursList.appendChild(listItem);
-
-        specialDayInput.value = '';
-        alteredHoursInput.value = '';
-      } else {
-        alert('Please fill both fields.');
-      }
-    });
-
-    formContainer.specialDays = specialDays;
-  }
-};
-
 export const initializeEatForm = async (formContainer, data = null) => {
   attachCoordinatesHandler(formContainer);
   attachSocialMediaHandler(formContainer);
   attachLogoUploadHandler(formContainer);
   attachImageUploadHandler(formContainer);
+  attachSpecialDayHandlers(formContainer);
   initializeTinyMCE('#description');
   await initializeMenuSelection(formContainer);
 
   if (data) {
     populateEatForm(formContainer, data);
   }
+
+  const submitButton = formContainer.querySelector('#submitButton');
+  console.log('Submit button found:', submitButton); // Debugging statement
+
+  if (submitButton) {
+    console.log('Attaching event listener to submit button'); // Debugging statement
+    submitButton.addEventListener('click', handleSubmit);
+  }
 };
+
+const handleSubmit = async (event) => {
+  event.preventDefault(); // Prevent default form submission
+
+  console.log('Submit button clicked'); // Debugging statement
+
+  const form = document.getElementById('combined-form');
+  const formData = new FormData(form);
+
+  // Log form data for debugging
+  for (let [key, value] of formData.entries()) {
+    console.log(key, value);
+  }
+
+  try {
+    const response = await apiService.fetch('eat-form-submission', { // Updated endpoint
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log('Response:', response); // Debugging statement
+
+    if (response.ok) {
+      alert('Form submitted successfully!');
+    } else {
+      const errorData = await response.text(); // Read response as text to debug
+      console.error('Error response text:', errorData);
+      alert('Error submitting form. Please try again.');
+    }
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    alert('Error submitting form. Please try again.');
+  }
+};
+
+// Event listener attachment
+document.addEventListener('DOMContentLoaded', () => {
+  const formContainer = document.querySelector('.tab-content');
+  initializeEatForm(formContainer);
+
+  const submitButton = formContainer.querySelector('#submitButton');
+  console.log('Submit button found:', submitButton); // Debugging statement
+
+  if (submitButton) {
+    console.log('Attaching event listener to submit button'); // Debugging statement
+    submitButton.addEventListener('click', handleSubmit);
+  }
+});
 
 const populateEatForm = async (formContainer, data) => {
   Object.keys(data).forEach(key => {
@@ -611,147 +387,6 @@ const populateEatForm = async (formContainer, data) => {
     formContainer.querySelector('#active-toggle').checked = false;
     document.getElementById('toggle-status').textContent = 'Inactive';
     document.getElementById('toggle-status').style.color = 'red';
-  }
-};
-
-const initializeTinyMCE = (selector) => {
-  tinymce.init({
-    selector: selector,
-    license_key: 'gpl',
-    plugins: 'link code',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
-    setup: (editor) => {
-      editor.on('change', () => {
-        editor.save();
-      });
-    },
-  });
-};
-
-export const initializeMenuSelection = async (formContainer) => {
-  const menuTypeDropdown = formContainer.querySelector('#menuType');
-  const averageCostDropdown = formContainer.querySelector('#averageCost');
-  const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-  const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
-  const newMenuTypeInput = formContainer.querySelector('#newMenuType');
-  const menuTypeList = formContainer.querySelector('#menu-type-list');
-
-  const menuTypes = [];
-
-  const fetchedMenuTypes = await getMenuTypes();
-  if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
-    fetchedMenuTypes.forEach(type => {
-      const option = document.createElement('option');
-      option.value = type.id;
-      option.textContent = type.name;
-      menuTypeDropdown.appendChild(option);
-    });
-  } else {
-    console.error('Error fetching menu types:', fetchedMenuTypes);
-  }
-
-  const fetchedAverageCosts = await getAverageCosts();
-  if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
-    fetchedAverageCosts.forEach(cost => {
-      const option = document.createElement('option');
-      option.value = cost.id;
-      option.textContent = `${cost.symbol} - ${cost.description}`;
-      averageCostDropdown.appendChild(option);
-    });
-  } else {
-    console.error('Error fetching average costs:', fetchedAverageCosts);
-  }
-
-  addMenuTypeButton.addEventListener('click', () => {
-    const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
-    if (selectedOption) {
-      const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
-      menuTypeList.appendChild(listItem);
-      menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-    }
-  });
-
-  addNewMenuTypeButton.addEventListener('click', async () => {
-    const newMenuType = newMenuTypeInput.value.trim();
-    if (newMenuType) {
-      const response = await addNewMenuType(newMenuType);
-      if (response && response.id) {
-        const option = document.createElement('option');
-        option.value = response.id;
-        option.textContent = newMenuType;
-        menuTypeDropdown.appendChild(option);
-
-        const listItem = createMenuListItem(newMenuType, response.id);
-        menuTypeList.appendChild(listItem);
-        menuTypes.push({ id: response.id, name: newMenuType });
-
-        newMenuTypeInput.value = '';
-      } else {
-        console.error('Error adding new menu type:', response);
-      }
-    }
-  });
-
-  formContainer.menuTypes = menuTypes;
-
-  function createMenuListItem(name, id) {
-    const listItem = document.createElement('li');
-    listItem.textContent = name;
-    listItem.dataset.id = id;
-
-    const removeButton = document.createElement('button');
-    removeButton.textContent = 'x';
-    removeButton.style.color = 'red';
-    removeButton.style.marginLeft = '10px';
-    removeButton.addEventListener('click', () => {
-      menuTypeList.removeChild(listItem);
-      const index = menuTypes.findIndex(type => type.id === id);
-      if (index > -1) {
-        menuTypes.splice(index, 1);
-      }
-    });
-
-    listItem.appendChild(removeButton);
-    return listItem;
-  }
-};
-
-export const getMenuTypes = async () => {
-  const tableName = `eat_type`;
-  try {
-    const response = await apiService.fetch(`menu-types?table=${tableName}`);
-    return response;
-  } catch (error) {
-    console.error(`Error fetching menu types:`, error);
-    return [];
-  }
-};
-
-export const getAverageCosts = async () => {
-  const tableName = `eat_cost`;
-  try {
-    const response = await apiService.fetch(`average-costs?table=${tableName}`);
-    return response;
-  } catch (error) {
-    console.error(`Error fetching average costs:`, error);
-    return [];
-  }
-};
-
-export const addNewMenuType = async (newMenuType) => {
-  const tableName = `eat_type`;
-  try {
-    const response = await apiService.fetch('menu-types', {
-      method: 'POST',
-      body: JSON.stringify({ name: newMenuType, table: tableName }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    return response;
-  } catch (error) {
-    console.error(`Error adding new menu type:`, error);
-    return { id: Date.now(), name: newMenuType };
   }
 };
 

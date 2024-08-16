@@ -4,12 +4,16 @@ import ApiService from './services/apiService.js';
 import TabManager from './components/tabManager.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const store = new Store({});
+    const store = new Store({ data: { combined: [] } });
+    console.log("Store initialized:", store);
+
     const router = new Router();
+    console.log("Router initialized:", router);
+
+    const apiService = new ApiService();
 
     try {
-        const apiService = new ApiService();
-        console.log("API Service loaded");
+        console.log("Fetching user role and initial data...");
         const userData = await apiService.fetch('user-role');
 
         if (!userData.role) {
@@ -17,13 +21,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         console.log("User role fetched:", userData.role);
-        
+
+        // Fetch main data and store it
+        const mainData = await apiService.fetchData();
+        console.log("Main data fetched:", mainData);
+
+        // Update the store with the fetched data
+        store.updateState({ data: mainData });
+
+        console.log("Router before initializing TabManager:", router);
+        console.log("Router addRoute method:", typeof router.addRoute);
+
+        // Initialize TabManager with the store, apiService, and router
         const tabManager = new TabManager(store, apiService, router);
         console.log("TabManager initialized");
 
-        router.loadCurrentRoute(); // This will now force navigation to the default route on initial load
+        router.loadCurrentRoute();
     } catch (error) {
-        console.error("Failed to initialize tabs based on user role:", error);
+        console.error("Failed to initialize the application:", error);
         document.getElementById('content').innerHTML = '<p>Error loading the application. Please try again later.</p>';
     }
 });

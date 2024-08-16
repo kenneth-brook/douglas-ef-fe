@@ -9,6 +9,13 @@ class EventsTab {
   }
 
   setupRoutes() {
+    console.log("Router in EventsTab:", this.router);
+    console.log("Router addRoute method:", typeof this.router.addRoute);
+
+    if (!this.router || typeof this.router.addRoute !== 'function') {
+        throw new Error("Router is not properly initialized or does not have an 'addRoute' method.");
+    }
+    
     this.router.addRoute('events/add', () => this.showAddEvent());
     this.router.addRoute('events/edit/:id', id => this.showEditEvent(id));
     this.router.addRoute('events/list', () => this.showListEvents());

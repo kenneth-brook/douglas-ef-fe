@@ -1,6 +1,6 @@
 class Store {
     constructor(initialState) {
-        this.state = initialState || {};
+        this.state = initialState || { data: { combined: [] } }; // Ensure data.combined is initialized
         this.listeners = [];
     }
 

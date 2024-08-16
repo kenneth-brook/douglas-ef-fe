@@ -463,6 +463,11 @@ export const initializeMenuSelection = async (formContainer) => {
     const newMenuTypeInput = formContainer.querySelector('#newMenuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
 
+    if (!menuTypeDropdown || !averageCostDropdown || !addMenuTypeButton || !addNewMenuTypeButton || !newMenuTypeInput || !menuTypeList) {
+      console.error('One or more elements not found for Menu Selection initialization');
+      return;
+    }
+
     const menuTypes = [];
 
     const fetchedMenuTypes = await getMenuTypes();

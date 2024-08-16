@@ -5,7 +5,8 @@ import { shopForm, initializeShopForm } from './forms/shopForm.js';
 import ListBusinesses from './listBusinesses.js';
 
 class BusinessesTab {
-    constructor(router, apiService) {
+    constructor(store, router, apiService) {
+        this.store = store;
         this.router = router;
         this.apiService = apiService;
         this.setupRoutes();
@@ -24,7 +25,7 @@ class BusinessesTab {
             return;
         }
         contentArea.innerHTML = '';
-        const listBusinesses = new ListBusinesses(this.router);
+        const listBusinesses = new ListBusinesses(this.router, this.store, this.apiService);
         const renderedListBusinesses = listBusinesses.render();
         contentArea.appendChild(renderedListBusinesses);
         this.setActiveTab('businesses/list');

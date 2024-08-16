@@ -3,12 +3,16 @@ import { createEventsToolbar } from '../../common/toolbars.js';
 
 class ListEvents {
   constructor(router, store) {
-    this.router = router;
-    this.store = store;
-    this.container = document.createElement('div');
-    this.parentContainer = document.createElement('div');
-    this.parentContainer.className = 'events-section';
-    this.parentContainer.appendChild(this.container);
+      this.router = router;
+      this.store = store;
+
+      console.log("Store in ListEvents:", this.store);
+      console.log("Store getState method:", typeof this.store.getState);
+
+      this.container = document.createElement('div');
+      this.parentContainer = document.createElement('div');
+      this.parentContainer.className = 'events-section';
+      this.parentContainer.appendChild(this.container);
   }
 
   render() {

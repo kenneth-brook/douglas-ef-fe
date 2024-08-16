@@ -2,7 +2,8 @@ import { eventForm, initializeEventForm } from './eventForm.js';
 import ListEvents from './listEvents.js';
 
 class EventsTab {
-  constructor(router, apiService) {
+  constructor(store, router, apiService) {
+    this.store = store;
     this.router = router;
     this.apiService = apiService;
     this.setupRoutes();
@@ -18,7 +19,7 @@ class EventsTab {
     
     this.router.addRoute('events/add', () => this.showAddEvent());
     this.router.addRoute('events/edit/:id', id => this.showEditEvent(id));
-    this.router.addRoute('events/list', () => this.showListEvents());
+    this.router.addRoute('events/list', this.showListEvents.bind(this));
   }
 
   showAddEvent() {
@@ -42,10 +43,17 @@ class EventsTab {
   }
 
   showListEvents() {
-    const view = new ListEvents(this.router);
-    document.querySelector('.tab-content').innerHTML = '';
-    document.querySelector('.tab-content').appendChild(view.render());
-  }
+    const contentArea = document.querySelector('.tab-content');
+    if (!contentArea) {
+        console.error("Content area element not found");
+        return;
+    }
+    contentArea.innerHTML = '';
+
+    const listEvents = new ListEvents(this.router, this.store);
+    const renderedEvents = listEvents.render();
+    contentArea.appendChild(renderedEvents);
+}
 }
 
 export default EventsTab;

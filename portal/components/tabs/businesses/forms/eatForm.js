@@ -252,9 +252,14 @@ export const attachSocialMediaHandler = (formContainer) => {
     formContainer.socialMediaPairs = socialMediaPairs;
 };
 
-export const attachLogoUploadHandler = (formContainer) => {
+export const attachLogoUploadHandler = (formContainer, existingLogoUrl = '') => {
     const logoUploadInput = formContainer.querySelector('#logoUpload');
     const logoPreviewContainer = formContainer.querySelector('#logo-preview');
+
+    // If there is an existing logo, display it
+    if (existingLogoUrl) {
+        displayLogo(existingLogoUrl, logoPreviewContainer, formContainer);
+    }
 
     if (logoUploadInput) {
         logoUploadInput.addEventListener('change', async () => {
@@ -262,142 +267,152 @@ export const attachLogoUploadHandler = (formContainer) => {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    logoPreviewContainer.innerHTML = '';
-
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.alt = file.name;
-                    img.className = 'thumbnail';
-
-                    img.addEventListener('mouseover', () => {
-                        const enlargeImg = document.createElement('img');
-                        enlargeImg.src = img.src;
-                        enlargeImg.className = 'enlarge-thumbnail';
-                        document.body.appendChild(enlargeImg);
-
-                        img.addEventListener('mousemove', (event) => {
-                            enlargeImg.style.top = `${event.clientY + 15}px`;
-                            enlargeImg.style.left = `${event.clientX + 15}px`;
-                        });
-
-                        img.addEventListener('mouseout', () => {
-                            document.body.removeChild(enlargeImg);
-                        });
-                    });
-
-                    const removeButton = document.createElement('button');
-                    removeButton.textContent = 'Remove';
-                    removeButton.className = 'remove-button';
-                    removeButton.addEventListener('click', () => {
-                        logoPreviewContainer.innerHTML = '';
-                        formContainer.logoUrl = '';
-                    });
-
-                    logoPreviewContainer.appendChild(img);
-                    logoPreviewContainer.appendChild(removeButton);
+                    logoPreviewContainer.innerHTML = ''; // Clear previous preview
+                    displayLogo(e.target.result, logoPreviewContainer, formContainer, file);
                 };
                 reader.readAsDataURL(file);
-
-                // Upload file to DreamHost
-                const uniqueFilename = getUniqueFilename(file.name);
-                const logoFormData = new FormData();
-                logoFormData.append('imageFiles[]', file, uniqueFilename);
-
-                try {
-                    const uploadResult = await uploadFilesToDreamHost(logoFormData);
-                    if (uploadResult && uploadResult[0]) {
-                        formContainer.logoUrl = `uploads/${uniqueFilename}`;
-                        console.log('Logo URL:', formContainer.logoUrl);
-                    } else {
-                        console.error('Failed to upload logo:', uploadResult);
-                    }
-                } catch (error) {
-                    console.error('Error during logo upload:', error);
-                }
             }
         });
     }
 };
 
-export const attachImageUploadHandler = (formContainer) => {
+export const attachImageUploadHandler = (formContainer, existingImageUrls = []) => {
+    if (!Array.isArray(existingImageUrls)) {
+      existingImageUrls = []; // If it's not an array, make it an empty array
+    }
+    
     const imageUploadInput = formContainer.querySelector('#imageUpload');
     const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
-    const imageFileListContainer = formContainer.querySelector('#image-file-list');
 
-    formContainer.imageUrls = [];
+    // Store existing images without re-uploading them
+    formContainer.imageUrls = [...existingImageUrls];
+
+    // Display existing images
+    existingImageUrls.forEach(url => {
+        displayImage(url, imageThumbnailsContainer, formContainer);
+    });
 
     if (imageUploadInput) {
         imageUploadInput.addEventListener('change', async () => {
             const files = imageUploadInput.files;
 
-            for (const file of files) {
+            Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const thumbnailContainer = document.createElement('div');
-                    thumbnailContainer.className = 'thumbnail-container';
-
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.alt = file.name;
-                    img.className = 'thumbnail';
-
-                    img.addEventListener('mouseover', () => {
-                        const enlargeImg = document.createElement('img');
-                        enlargeImg.src = img.src;
-                        enlargeImg.className = 'enlarge-thumbnail';
-                        document.body.appendChild(enlargeImg);
-
-                        img.addEventListener('mousemove', (event) => {
-                            enlargeImg.style.top = `${event.clientY + 15}px`;
-                            enlargeImg.style.left = `${event.clientX + 15}px`;
-                        });
-
-                        img.addEventListener('mouseout', () => {
-                            document.body.removeChild(enlargeImg);
-                        });
-                    });
-
-                    const removeButton = document.createElement('button');
-                    removeButton.textContent = 'Remove';
-                    removeButton.className = 'remove-button';
-                    removeButton.addEventListener('click', () => {
-                        const index = formContainer.imageUrls.indexOf(file.name);
-                        if (index > -1) {
-                            formContainer.imageUrls.splice(index, 1);
-                        }
-                        imageThumbnailsContainer.removeChild(thumbnailContainer);
-                        imageFileListContainer.removeChild(listItem);
-                    });
-
-                    thumbnailContainer.appendChild(img);
-                    thumbnailContainer.appendChild(removeButton);
-                    imageThumbnailsContainer.appendChild(thumbnailContainer);
-
-                    const listItem = document.createElement('li');
-                    listItem.textContent = file.name;
-                    imageFileListContainer.appendChild(listItem);
+                  console.log('Before calling displayImage');
+                    displayImage(e.target.result, imageThumbnailsContainer, formContainer, file);
                 };
                 reader.readAsDataURL(file);
-
-                const uniqueFilename = getUniqueFilename(file.name);
-                const imageFormData = new FormData();
-                imageFormData.append('imageFiles[]', file, uniqueFilename);
-
-                try {
-                    const uploadResult = await uploadFilesToDreamHost(imageFormData);
-                    if (uploadResult && uploadResult[0]) {
-                        formContainer.imageUrls.push(`uploads/${uniqueFilename}`);
-                        console.log('Image URLs:', formContainer.imageUrls);
-                    } else {
-                        console.error('Failed to upload image:', uploadResult);
-                    }
-                } catch (error) {
-                    console.error('Error during image upload:', error);
-                }
-            }
+            });
         });
     }
 };
+
+// Helper function to display the logo
+function displayLogo(url, container, formContainer, file = null) {
+    const img = document.createElement('img');
+    img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+    img.className = 'thumbnail';
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-button';
+    removeButton.addEventListener('click', () => {
+        container.innerHTML = '';
+        formContainer.logoUrl = ''; // Clear the stored URL or file
+    });
+
+    container.appendChild(img);
+    container.appendChild(removeButton);
+
+    if (file) {
+        uploadFile(file, formContainer, 'logo');
+    } else {
+        formContainer.logoUrl = url; // Keep existing URL
+    }
+}
+
+// Helper function to display an image
+function displayImage(url, container, formContainer, file = null) {
+    console.log('displayImage called with URL:', url);
+    
+    const img = document.createElement('img');
+    img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+    console.log('Image src:', img.src);
+    img.className = 'thumbnail';
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-button';
+    removeButton.addEventListener('click', () => {
+        container.removeChild(img);
+        container.removeChild(removeButton);
+        formContainer.imageUrls = formContainer.imageUrls.filter(imageUrl => imageUrl !== url); // Remove from the list
+    });
+
+    container.appendChild(img);
+    container.appendChild(removeButton);
+
+    if (file) {
+        uploadFile(file, formContainer, 'image');
+    } else {
+        formContainer.imageUrls.push(url); // Keep existing URL
+    }
+}
+
+const initializeAverageCostDropdown = async (formContainer, selectedCost = null) => {
+  const averageCostDropdown = formContainer.querySelector('#averageCost');
+  
+  if (!averageCostDropdown) {
+      console.error('Average Cost dropdown element not found');
+      return;
+  }
+
+  const averageCosts = await getAverageCosts();
+
+  if (averageCosts && Array.isArray(averageCosts)) {
+      averageCosts.forEach(cost => {
+          const option = document.createElement('option');
+          option.value = cost.id;
+          option.textContent = `${cost.symbol}: ${cost.description}`;
+          if (selectedCost && String(cost.id) === String(selectedCost)) {
+              option.selected = true;
+          }
+          averageCostDropdown.appendChild(option);
+      });
+  } else {
+      console.error('Error fetching or populating average costs:', averageCosts);
+  }
+};
+
+// Helper function to handle file uploads
+async function uploadFile(file, formContainer, type) {
+  const formData = new FormData();
+  const uniqueFilename = getUniqueFilename(file.name);
+  formData.append('file', file, uniqueFilename);
+
+  try {
+      const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
+          method: 'POST',
+          body: formData,
+      });
+
+      const result = await response.json();
+      if (result && result[0]) {
+          const uploadedUrl = `https://douglas.365easyflow.com/easyflow-images/uploads/${uniqueFilename}`;
+          if (type === 'logo') {
+              formContainer.logoUrl = uploadedUrl;
+          } else if (type === 'image') {
+              formContainer.imageUrls.push(uploadedUrl);
+          }
+          console.log(`Uploaded ${type} URL:`, uploadedUrl);
+      } else {
+          console.error('Failed to upload file:', result);
+      }
+  } catch (error) {
+      console.error('Error uploading file:', error);
+  }
+}
 
 export const attachSpecialDayHandlers = (formContainer) => {
     const specialDays = [];
@@ -430,46 +445,45 @@ export const attachSpecialDayHandlers = (formContainer) => {
     }
 };
 
-export const initializeEatForm = async (formContainer) => {
-    attachCoordinatesHandler(formContainer);
-    attachSocialMediaHandler(formContainer);
-    attachLogoUploadHandler(formContainer);
-    attachImageUploadHandler(formContainer);
-    initializeTinyMCE('#description');
-    await initializeMenuSelection(formContainer);
-}
-
-
-const initializeTinyMCE = (selector) => {
-  tinymce.init({
-    selector: selector,
-    license_key: 'gpl',
-    plugins: 'link code',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
-    setup: (editor) => {
-      editor.on('change', () => {
-        editor.save();
-      });
-    },
-  });
+export const initializeEatForm = async (formContainer, businessData = null) => {
+  attachCoordinatesHandler(formContainer);
+  attachSocialMediaHandler(formContainer, businessData ? businessData.socialMedia : []);
+  attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
+  attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
+  initializeTinyMCE('#description', businessData ? businessData.description : '');
+  await initializeMenuSelection(formContainer, businessData ? businessData.menuTypes : []);
+  await initializeAverageCostDropdown(formContainer, businessData ? businessData.cost : null);
 };
 
+const initializeTinyMCE = (selector, content = '') => {
+    tinymce.init({
+        selector: selector,
+        license_key: 'gpl',
+        plugins: 'link code',
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
+        setup: (editor) => {
+            editor.on('init', () => {
+                if (content) {
+                    editor.setContent(content);
+                }
+            });
+        },
+    });
+};
 
-export const initializeMenuSelection = async (formContainer) => {
+export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
     const menuTypeDropdown = formContainer.querySelector('#menuType');
-    const averageCostDropdown = formContainer.querySelector('#averageCost');
-    const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-    const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
-    const newMenuTypeInput = formContainer.querySelector('#newMenuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
+    const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
 
-    if (!menuTypeDropdown || !averageCostDropdown || !addMenuTypeButton || !addNewMenuTypeButton || !newMenuTypeInput || !menuTypeList) {
-      console.error('One or more elements not found for Menu Selection initialization');
-      return;
+    if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton) {
+        console.error('One or more elements not found for Menu Selection initialization');
+        return;
     }
 
     const menuTypes = [];
 
+    // Fetch and populate the menu type dropdown
     const fetchedMenuTypes = await getMenuTypes();
     if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
         fetchedMenuTypes.forEach(type => {
@@ -477,23 +491,19 @@ export const initializeMenuSelection = async (formContainer) => {
             option.value = type.id;
             option.textContent = type.name;
             menuTypeDropdown.appendChild(option);
+
+            // Check if this type is in the selectedMenuTypes array and add it to the list if so
+            if (selectedMenuTypes.includes(String(type.id))) {
+                const listItem = createMenuListItem(type.name, type.id);
+                menuTypeList.appendChild(listItem);
+                menuTypes.push({ id: type.id, name: type.name });
+            }
         });
     } else {
         console.error('Error fetching menu types:', fetchedMenuTypes);
     }
 
-    const fetchedAverageCosts = await getAverageCosts();
-    if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
-        fetchedAverageCosts.forEach(cost => {
-            const option = document.createElement('option');
-            option.value = cost.id;
-            option.textContent = `${cost.symbol} - ${cost.description}`;
-            averageCostDropdown.appendChild(option);
-        });
-    } else {
-        console.error('Error fetching average costs:', fetchedAverageCosts);
-    }
-
+    // Add event listener for adding new selections
     addMenuTypeButton.addEventListener('click', () => {
         const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
         if (selectedOption) {
@@ -503,27 +513,9 @@ export const initializeMenuSelection = async (formContainer) => {
         }
     });
 
-    addNewMenuTypeButton.addEventListener('click', async () => {
-      const newMenuType = newMenuTypeInput.value.trim();
-      if (newMenuType) {
-        const response = await addNewMenuType(newMenuType);
-        if (response && response.id) {
-          const option = document.createElement('option');
-          option.value = response.id;
-          option.textContent = newMenuType;
-          menuTypeDropdown.appendChild(option);
-          const listItem = createMenuListItem(newMenuType, response.id);
-          menuTypeList.appendChild(listItem);
-          menuTypes.push({ id: response.id, name: newMenuType });
-          newMenuTypeInput.value = '';
-        } else {
-          console.error('Error adding new menu type:', response);
-        }
-      }
-    });
-
     formContainer.menuTypes = menuTypes;
 
+    // Helper function to create the list item
     function createMenuListItem(name, id) {
         const listItem = document.createElement('li');
         listItem.textContent = name;

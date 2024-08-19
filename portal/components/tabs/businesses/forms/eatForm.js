@@ -504,24 +504,22 @@ export const initializeMenuSelection = async (formContainer) => {
     });
 
     addNewMenuTypeButton.addEventListener('click', async () => {
-        const newMenuType = newMenuTypeInput.value.trim();
-        if (newMenuType) {
-            const response = await addNewMenuType(newMenuType);
-            if (response && response.id) {
-                const option = document.createElement('option');
-                option.value = response.id;
-                option.textContent = newMenuType;
-                menuTypeDropdown.appendChild(option);
-
-                const listItem = createMenuListItem(newMenuType, response.id);
-                menuTypeList.appendChild(listItem);
-                menuTypes.push({ id: response.id, name: newMenuType });
-
-                newMenuTypeInput.value = '';
-            } else {
-                console.error('Error adding new menu type:', response);
-            }
+      const newMenuType = newMenuTypeInput.value.trim();
+      if (newMenuType) {
+        const response = await addNewMenuType(newMenuType);
+        if (response && response.id) {
+          const option = document.createElement('option');
+          option.value = response.id;
+          option.textContent = newMenuType;
+          menuTypeDropdown.appendChild(option);
+          const listItem = createMenuListItem(newMenuType, response.id);
+          menuTypeList.appendChild(listItem);
+          menuTypes.push({ id: response.id, name: newMenuType });
+          newMenuTypeInput.value = '';
+        } else {
+          console.error('Error adding new menu type:', response);
         }
+      }
     });
 
     formContainer.menuTypes = menuTypes;

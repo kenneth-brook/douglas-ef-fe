@@ -9,6 +9,7 @@ class BusinessesTab {
         this.store = store;
         this.router = router;
         this.apiService = apiService;
+        console.log('apiService methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(apiService)));
         this.setupRoutes();
     }
 
@@ -102,7 +103,7 @@ class BusinessesTab {
         }, 100); // Adjust delay if needed
     }
 
-    initializeForm(formContainer, type, initializeForm, businessData = null) {
+    async initializeForm(formContainer, type, initializeForm, businessData = null) {
         initializeForm(formContainer, businessData);
     
         const combinedForm = formContainer.querySelector('#combined-form');
@@ -153,19 +154,14 @@ class BusinessesTab {
                 initialFormData.append('email', formData.get('email'));
                 initialFormData.append('website', formData.get('website'));
     
-                // Handling social media as JSON array
                 const socialMediaArray = formContainer.socialMediaPairs || [];
                 initialFormData.append('socialMedia', JSON.stringify(socialMediaArray));
-    
                 initialFormData.append('logoUrl', logoUrl);
                 initialFormData.append('imageUrls', JSON.stringify(imageUrls));
                 initialFormData.append('description', formData.get('description'));
                 initialFormData.append('menuTypes', formData.get('menuTypes'));
                 initialFormData.append('specialDays', formData.get('specialDays'));
     
-                console.log('URLSearchParams:', initialFormData.toString());
-    
-                console.log('Submitting initial form data');
                 const businessResponse = businessData
                     ? await this.apiService.updateBusiness(businessData.id, initialFormData)
                     : await this.apiService.createBusiness(initialFormData);
@@ -198,21 +194,21 @@ class BusinessesTab {
                             console.error('Error submitting eat form:', error);
                         }
                     }
-    
+
                     if (type === 'play') {
                         detailsFormData.append('menuTypes', formData.get('menuTypes'));
                         detailsFormData.append('special_days', formData.get('specialDays'));
                         const operationalHours = this.collectOperationalHours(formContainer);
                         detailsFormData.append('hours', JSON.stringify(operationalHours));
-    
+        
                         try {
                             const playResponse = await this.apiService.submitPlayForm(detailsFormData);
                             console.log('Play form data submitted', playResponse);
                         } catch (error) {
                             console.error('Error submitting play form:', error);
                         }
-                    }
-    
+                      }
+
                     if (type === 'shop') {
                         detailsFormData.append('menuTypes', formData.get('menuTypes'));
                         detailsFormData.append('special_days', formData.get('specialDays'));
@@ -225,19 +221,21 @@ class BusinessesTab {
                         } catch (error) {
                             console.error('Error submitting shop form:', error);
                         }
-                    }
-    
-                    if (type === 'stay') {
+                      }
+  
+                      if (type === 'stay') {
                         detailsFormData.append('menuTypes', formData.get('menuTypes'));
                         detailsFormData.append('averageCost', formData.get('averageCost'));
     
                         try {
                             const stayResponse = await this.apiService.submitStayForm(detailsFormData);
-                            console.log('Stay form data submitted', stayResponse);
+                            console.log('Play form data submitted', stayResponse);
                         } catch (error) {
-                            console.error('Error submitting stay form:', error);
+                            console.error('Error submitting play form:', error);
                         }
-                    }
+                      }
+    
+                    // Handle other types similarly...
     
                     console.log('Redirecting to list view');
                     setTimeout(() => {
@@ -253,6 +251,7 @@ class BusinessesTab {
             this.populateFormFields(formContainer, businessData);
         }
     }
+    
     
     populateFormFields(formContainer, businessData) {
         formContainer.querySelector('#businessName').value = businessData.name || '';

@@ -105,145 +105,123 @@ class BusinessesTab {
 
     async initializeForm(formContainer, type, initializeForm, businessData = null) {
         initializeForm(formContainer, businessData);
-    
+        
         const combinedForm = formContainer.querySelector('#combined-form');
         const submitButton = formContainer.querySelector('#submitButton');
+        
+        let isSubmitting = false;
     
-        // Attach the event listener to handle form submission
         submitButton.addEventListener('click', async (event) => {
             event.preventDefault();
-            console.log('Submit button clicked and default prevented');
     
-            // Save TinyMCE content back to the textarea
+            if (isSubmitting) return;
+            isSubmitting = true;
+    
+            console.log('Submit button clicked and default prevented');
             tinymce.triggerSave();
     
             const formData = new FormData(combinedForm);
-    
-            // If editing, append the business ID to the form data
-            if (businessData) {
-                formData.append('businessId', businessData.id);
-            }
-    
-            // Collect and append the uploaded URLs from formContainer
             const logoUrl = formContainer.logoUrl || '';
             const imageUrls = formContainer.imageUrls || [];
+            const socialMediaArray = formContainer.socialMediaPairs || [];
+            const menuTypes = formContainer.menuTypes || [];
+            const specialDays = formContainer.specialDays || [];
+
+            console.log('Form Container Menu Types:', menuTypes);
+    
             formData.append('logoUrl', logoUrl);
             formData.append('imageUrls', JSON.stringify(imageUrls));
-    
-            // Include selected menu types and special days if available
-            const menuTypes = formContainer.menuTypes || [];
+            formData.append('socialMedia', JSON.stringify(socialMediaArray));
             formData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
-            const specialDays = formContainer.specialDays || [];
             formData.append('specialDays', JSON.stringify(specialDays));
     
-            console.log('Form Data:', Array.from(formData.entries()));
+            const data = {
+                active: formData.get('active') ? 'true' : 'false',
+                businessName: formData.get('businessName'),
+                streetAddress: formData.get('streetAddress'),
+                mailingAddress: formData.get('mailingAddress'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                zipCode: formData.get('zipCode'),
+                latitude: formData.get('latitude') || '',
+                longitude: formData.get('longitude') || '',
+                phone: formData.get('phone'),
+                email: formData.get('email'),
+                website: formData.get('website'),
+                socialMedia: JSON.stringify(formContainer.socialMediaPairs || []),
+                logoUrl: formData.get('logoUrl'),
+                imageUrls: JSON.stringify(formContainer.imageUrls || []),
+                description: formData.get('description'),
+                menuTypes: JSON.stringify(formContainer.menuTypes || []),
+                specialDays: JSON.stringify(formContainer.specialDays || []),
+            };
+    
+            console.log('Data object before update:', data);
     
             try {
-                // First submission for initial business data
-                const initialFormData = new URLSearchParams();
-                initialFormData.append('active', formData.get('active') ? 'true' : 'false');
-                initialFormData.append('businessName', formData.get('businessName'));
-                initialFormData.append('streetAddress', formData.get('streetAddress'));
-                initialFormData.append('mailingAddress', formData.get('mailingAddress'));
-                initialFormData.append('city', formData.get('city'));
-                initialFormData.append('state', formData.get('state'));
-                initialFormData.append('zipCode', formData.get('zipCode'));
-                initialFormData.append('latitude', formData.get('latitude') || '');
-                initialFormData.append('longitude', formData.get('longitude') || '');
-                initialFormData.append('phone', formData.get('phone'));
-                initialFormData.append('email', formData.get('email'));
-                initialFormData.append('website', formData.get('website'));
-    
-                const socialMediaArray = formContainer.socialMediaPairs || [];
-                initialFormData.append('socialMedia', JSON.stringify(socialMediaArray));
-                initialFormData.append('logoUrl', logoUrl);
-                initialFormData.append('imageUrls', JSON.stringify(imageUrls));
-                initialFormData.append('description', formData.get('description'));
-                initialFormData.append('menuTypes', formData.get('menuTypes'));
-                initialFormData.append('specialDays', formData.get('specialDays'));
-    
-                const businessResponse = businessData
-                    ? await this.apiService.updateBusiness(businessData.id, initialFormData)
-                    : await this.apiService.createBusiness(initialFormData);
+                const businessResponse = businessData 
+                    ? await this.apiService.updateBusiness(businessData.id, data)
+                    : await this.apiService.createBusiness(data);
     
                 if (businessResponse && businessResponse.id) {
-                    console.log('Form data submitted successfully');
+                    console.log('Business processed successfully');
                     const businessId = businessResponse.id;
     
-                    if (!businessData) {
-                        const businessIdField = document.createElement('input');
-                        businessIdField.type = 'hidden';
-                        businessIdField.id = 'businessId';
-                        businessIdField.name = 'businessId';
-                        businessIdField.value = businessId;
-                        combinedForm.appendChild(businessIdField);
-                    }
-    
-                    const detailsFormData = new URLSearchParams();
-                    detailsFormData.append('businessId', businessId);
-    
-                    if (type === 'eat') {
+                    // Handle the form submission specific to the business type
+                    if (type === 'eat' || type === 'play' || type === 'shop' || type === 'stay') {
+                        const detailsFormData = new URLSearchParams();
+                        detailsFormData.append('businessId', businessId);
                         detailsFormData.append('menuTypes', formData.get('menuTypes'));
-                        detailsFormData.append('averageCost', formData.get('averageCost'));
-                        detailsFormData.append('special_days', formData.get('specialDays'));
+                        detailsFormData.append('specialDays', formData.get('specialDays'));
+                        
+                        if (type === 'eat' || type === 'stay') {
+                            detailsFormData.append('averageCost', formData.get('averageCost'));
+                        }
+    
+                        if (type === 'play' || type === 'shop') {
+                            const operationalHours = this.collectOperationalHours(formContainer);
+                            detailsFormData.append('hours', JSON.stringify(operationalHours));
+                        }
     
                         try {
-                            const eatResponse = await this.apiService.submitEatForm(detailsFormData);
-                            console.log('Eat form data submitted', eatResponse);
+                            if (type === 'eat') {
+                                const eatResponse = businessData
+                                    ? await this.apiService.updateEatForm(businessId, detailsFormData)
+                                    : await this.apiService.submitEatForm(detailsFormData);
+                                console.log('Eat form data submitted or updated', eatResponse);
+                            } else if (type === 'play') {
+                                const playResponse = businessData
+                                    ? await this.apiService.updatePlayForm(businessId, detailsFormData)
+                                    : await this.apiService.submitPlayForm(detailsFormData);
+                                console.log('Play form data submitted or updated', playResponse);
+                            } else if (type === 'shop') {
+                                const shopResponse = businessData
+                                    ? await this.apiService.updateShopForm(businessId, detailsFormData)
+                                    : await this.apiService.submitShopForm(detailsFormData);
+                                console.log('Shop form data submitted or updated', shopResponse);
+                            } else if (type === 'stay') {
+                                const stayResponse = businessData
+                                    ? await this.apiService.updateStayForm(businessId, detailsFormData)
+                                    : await this.apiService.submitStayForm(detailsFormData);
+                                console.log('Stay form data submitted or updated', stayResponse);
+                            }
+                            
                         } catch (error) {
-                            console.error('Error submitting eat form:', error);
+                            console.error('Error submitting additional form data:', error);
                         }
                     }
-
-                    if (type === 'play') {
-                        detailsFormData.append('menuTypes', formData.get('menuTypes'));
-                        detailsFormData.append('special_days', formData.get('specialDays'));
-                        const operationalHours = this.collectOperationalHours(formContainer);
-                        detailsFormData.append('hours', JSON.stringify(operationalHours));
-        
-                        try {
-                            const playResponse = await this.apiService.submitPlayForm(detailsFormData);
-                            console.log('Play form data submitted', playResponse);
-                        } catch (error) {
-                            console.error('Error submitting play form:', error);
-                        }
-                      }
-
-                    if (type === 'shop') {
-                        detailsFormData.append('menuTypes', formData.get('menuTypes'));
-                        detailsFormData.append('special_days', formData.get('specialDays'));
-                        const operationalHours = this.collectOperationalHours(formContainer);
-                        detailsFormData.append('hours', JSON.stringify(operationalHours));
     
-                        try {
-                            const shopResponse = await this.apiService.submitShopForm(detailsFormData);
-                            console.log('Shop form data submitted', shopResponse);
-                        } catch (error) {
-                            console.error('Error submitting shop form:', error);
-                        }
-                      }
-  
-                      if (type === 'stay') {
-                        detailsFormData.append('menuTypes', formData.get('menuTypes'));
-                        detailsFormData.append('averageCost', formData.get('averageCost'));
-    
-                        try {
-                            const stayResponse = await this.apiService.submitStayForm(detailsFormData);
-                            console.log('Play form data submitted', stayResponse);
-                        } catch (error) {
-                            console.error('Error submitting play form:', error);
-                        }
-                      }
-    
-                    // Handle other types similarly...
-    
-                    console.log('Redirecting to list view');
+                    // Redirect after successful submission
                     setTimeout(() => {
                         this.router.navigate('businesses/list');
                     }, 1000);
+                } else {
+                    console.error('Business creation/update failed');
                 }
             } catch (error) {
-                console.error('Error submitting form:', error);
+                console.error('Error processing business:', error);
+            } finally {
+                isSubmitting = false;  // Reset the flag after processing is complete
             }
         });
     
@@ -251,6 +229,7 @@ class BusinessesTab {
             this.populateFormFields(formContainer, businessData);
         }
     }
+    
     
     
     populateFormFields(formContainer, businessData) {
@@ -408,7 +387,7 @@ class BusinessesTab {
         }, 100);
     
         this.setActiveTab(`businesses/edit/${id}`);
-    }    
+    }
 }
 
 export default BusinessesTab;

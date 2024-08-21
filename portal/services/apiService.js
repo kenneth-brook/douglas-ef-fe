@@ -71,6 +71,18 @@ class ApiService {
     return response;
   }
 
+  async updateEatForm(eatFormId, formData) {
+    console.log('Menu Types before update:', formData.menuTypes);
+    const response = await this.fetch(`eat-form-submission/${eatFormId}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    });
+    return response;
+}
+
   async submitPlayForm(formData) {
     const response = await this.fetch('play-form-submission', {
       method: 'POST',

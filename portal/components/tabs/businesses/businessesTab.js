@@ -1,4 +1,4 @@
-import { eatForm, initializeEatForm, initializeMenuSelection } from './forms/eatForm.js';
+import { eatForm, initializeEatForm } from './forms/eatForm.js';
 import { stayForm, initializeStayForm } from './forms/stayForm.js';
 import { playForm, initializePlayForm } from './forms/playForm.js';
 import { shopForm, initializeShopForm } from './forms/shopForm.js';
@@ -152,7 +152,7 @@ class BusinessesTab {
                 logoUrl: formData.get('logoUrl'),
                 imageUrls: JSON.stringify(formContainer.imageUrls || []),
                 description: formData.get('description'),
-                menuTypes: JSON.stringify(formContainer.menuTypes || []),
+                menuTypes: formContainer.menuTypes.map(mt => mt.id),
                 specialDays: JSON.stringify(formContainer.specialDays || []),
             };
     
@@ -233,17 +233,29 @@ class BusinessesTab {
     
     
     populateFormFields(formContainer, businessData) {
-        formContainer.querySelector('#businessName').value = businessData.name || '';
-        formContainer.querySelector('#streetAddress').value = businessData.street_address || '';
-        formContainer.querySelector('#mailingAddress').value = businessData.mailing_address || '';
-        formContainer.querySelector('#city').value = businessData.city || '';
-        formContainer.querySelector('#state').value = businessData.state || '';
-        formContainer.querySelector('#zipCode').value = businessData.zip || '';
-        formContainer.querySelector('#latitude').value = businessData.lat || '';
-        formContainer.querySelector('#longitude').value = businessData.long || '';
-        formContainer.querySelector('#phone').value = businessData.phone || '';
-        formContainer.querySelector('#email').value = businessData.email || '';
-        formContainer.querySelector('#website').value = businessData.web || '';
+        const businessNameInput = formContainer.querySelector('#businessName');
+    const streetAddressInput = formContainer.querySelector('#streetAddress');
+    const mailingAddressInput = formContainer.querySelector('#mailingAddress');
+    const cityInput = formContainer.querySelector('#city');
+    const stateInput = formContainer.querySelector('#state');
+    const zipCodeInput = formContainer.querySelector('#zipCode');
+    const latitudeInput = formContainer.querySelector('#latitude');
+    const longitudeInput = formContainer.querySelector('#longitude');
+    const phoneInput = formContainer.querySelector('#phone');
+    const emailInput = formContainer.querySelector('#email');
+    const websiteInput = formContainer.querySelector('#website');
+
+    if (businessNameInput) businessNameInput.value = businessData.name || '';
+    if (streetAddressInput) streetAddressInput.value = businessData.street_address || '';
+    if (mailingAddressInput) mailingAddressInput.value = businessData.mailing_address || '';
+    if (cityInput) cityInput.value = businessData.city || '';
+    if (stateInput) stateInput.value = businessData.state || '';
+    if (zipCodeInput) zipCodeInput.value = businessData.zip || '';
+    if (latitudeInput) latitudeInput.value = businessData.lat || '';
+    if (longitudeInput) longitudeInput.value = businessData.long || '';
+    if (phoneInput) phoneInput.value = businessData.phone || '';
+    if (emailInput) emailInput.value = businessData.email || '';
+    if (websiteInput) websiteInput.value = businessData.web || '';
         
         const checkTinyMCE = setInterval(() => {
             const editor = tinymce.get('#description');
@@ -253,9 +265,8 @@ class BusinessesTab {
             }
         }, 100);
     
+        //initializeMenuSelection(formContainer, businessData.menu_types || []);
         console.log('Menu Types from businessData:', businessData.menu_types);
-    
-        initializeMenuSelection(formContainer, businessData.menu_types || []);
     
         if (Array.isArray(businessData.socialMedia)) {
             businessData.socialMedia.forEach(pair => {

@@ -18,6 +18,14 @@ export const eatForm = () => {
                 <!-- Business Details -->
                 ${renderBusinessDetailsSection()}
             </div>
+            <div class="form-section">
+                <!-- Latitude, Longitude and Auto Fill -->
+                ${renderLatLongSection()}
+            </div>
+            <div class="form-section">
+                <!-- Contact Details -->
+                ${renderContactDetailsSection()}
+            </div>
             <div class="form-section" id="social-media-section">
                 ${renderSocialMediaSection()}
             </div>
@@ -68,6 +76,9 @@ const renderBusinessDetailsSection = () => `
         <label for="zipCode">Zip Code:</label>
         <input type="text" id="zipCode" name="zipCode">
     </div>
+`;
+
+const renderLatLongSection = () => `
     <div class="form-group">
         <label for="latitude">Latitude:</label>
         <input type="text" id="latitude" name="latitude" readonly>
@@ -77,6 +88,21 @@ const renderBusinessDetailsSection = () => `
         <input type="text" id="longitude" name="longitude" readonly>
     </div>
     <button type="button" id="autofill-button">Auto Fill</button>
+`;
+
+const renderContactDetailsSection = () => `
+    <div class="form-group">
+        <label for="phone">Phone:</label>
+        <input type="tel" id="phone" name="phone">
+    </div>
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email">
+    </div>
+    <div class="form-group">
+        <label for="website">Website:</label>
+        <input type="url" id="website" name="website">
+    </div>
 `;
 
 const renderSocialMediaSection = () => `
@@ -274,52 +300,20 @@ export const attachImageUploadHandler = (formContainer, existingImageUrls = []) 
     const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
     const imageFileListContainer = formContainer.querySelector('#image-file-list');
 
-    formContainer.imageUrls = [...existingImageUrls]; // Start with existing image URLs
+    // Initialize formContainer.imageUrls with existing images, ensuring no duplicates
+    formContainer.imageUrls = [...new Set(existingImageUrls)];
 
     // Display existing images
     existingImageUrls.forEach(url => {
         displayImage(url, imageThumbnailsContainer, formContainer);
     });
 
-    imageUploadInput.addEventListener('change', async () => {
+    // Define the event listener function before using it
+    const handleImageUpload = async () => {
         const files = imageUploadInput.files;
 
+        // Avoid adding the same image multiple times
         for (const file of files) {
-            // Create and display thumbnail
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const thumbnailContainer = document.createElement('div');
-                thumbnailContainer.className = 'thumbnail-container';
-
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.alt = file.name;
-                img.className = 'thumbnail';
-
-                const removeButton = document.createElement('button');
-                removeButton.textContent = 'Remove';
-                removeButton.className = 'remove-button';
-                removeButton.addEventListener('click', () => {
-                    const index = formContainer.imageUrls.indexOf(`uploads/${uniqueFilename}`);
-                    if (index > -1) {
-                        formContainer.imageUrls.splice(index, 1);
-                    }
-                    imageThumbnailsContainer.removeChild(thumbnailContainer);
-                    imageFileListContainer.removeChild(listItem);
-                });
-
-                thumbnailContainer.appendChild(img);
-                thumbnailContainer.appendChild(removeButton);
-                imageThumbnailsContainer.appendChild(thumbnailContainer);
-
-                // Display file name
-                const listItem = document.createElement('li');
-                listItem.textContent = file.name;
-                imageFileListContainer.appendChild(listItem);
-            };
-            reader.readAsDataURL(file);
-
-            // Upload file to DreamHost
             const uniqueFilename = getUniqueFilename(file.name);
             const imageFormData = new FormData();
             imageFormData.append('imageFiles[]', file, uniqueFilename);
@@ -327,8 +321,14 @@ export const attachImageUploadHandler = (formContainer, existingImageUrls = []) 
             try {
                 const uploadResult = await uploadFilesToDreamHost(imageFormData);
                 if (uploadResult && uploadResult[0]) {
-                    formContainer.imageUrls.push(`uploads/${uniqueFilename}`);
-                    console.log('Image URLs:', formContainer.imageUrls);
+                    const newUrl = `uploads/${uniqueFilename}`;
+                    if (!formContainer.imageUrls.includes(newUrl)) {
+                        formContainer.imageUrls.push(newUrl);
+                        console.log('Image URLs after adding new image:', formContainer.imageUrls);
+
+                        // Display the newly uploaded image
+                        displayImage(newUrl, imageThumbnailsContainer, formContainer);
+                    }
                 } else {
                     console.error('Failed to upload image:', uploadResult);
                 }
@@ -336,7 +336,14 @@ export const attachImageUploadHandler = (formContainer, existingImageUrls = []) 
                 console.error('Error during image upload:', error);
             }
         }
-    });
+
+        // Clear the input after handling to prevent reprocessing the same files
+        imageUploadInput.value = '';
+    };
+
+    // Attach the event listener only once
+    imageUploadInput.removeEventListener('change', handleImageUpload);
+    imageUploadInput.addEventListener('change', handleImageUpload);
 };
 
 // Display functions for Logo and Image
@@ -414,7 +421,12 @@ const initializeAverageCostDropdown = async (formContainer, selectedCost = null)
 
 // Initialize form components
 export const initializeEatForm = async (formContainer, businessData = null) => {
+    if (!formContainer.imageUrls) {
+        formContainer.imageUrls = [];
+    }
+
     console.log('Received businessData in eatForm:', businessData);
+    console.log('initializeEatForm called with formContainer:', formContainer);
     attachCoordinatesHandler(formContainer);
     attachSocialMediaHandler(formContainer, businessData ? businessData.socialMedia : []);
     attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
@@ -629,4 +641,3 @@ document.addEventListener('DOMContentLoaded', () => {
     const formContainer = document.querySelector('.tab-content');
     initializeEatForm(formContainer);
 });
-

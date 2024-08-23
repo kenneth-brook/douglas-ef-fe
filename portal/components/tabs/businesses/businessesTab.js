@@ -104,6 +104,12 @@ class BusinessesTab {
     }
 
     async initializeForm(formContainer, type, initializeForm, businessData = null) {
+        if (businessData && businessData.imageUrls) {
+            formContainer.imageUrls = [...new Set(businessData.imageUrls)]; // Remove any duplicates
+        } else {
+            formContainer.imageUrls = []; // Start fresh for new entries
+        }
+
         initializeForm(formContainer, businessData);
         
         const combinedForm = formContainer.querySelector('#combined-form');
@@ -118,19 +124,25 @@ class BusinessesTab {
             isSubmitting = true;
     
             console.log('Submit button clicked and default prevented');
+            console.log('Image URLs before submission:', formContainer.imageUrls);
             tinymce.triggerSave();
-    
+
+            //formContainer.imageUrls = [];
+            formContainer.imageUrls = [...new Set(formContainer.imageUrls)];
+
             const formData = new FormData(combinedForm);
+            console.log('Image URLs before submission:', formContainer.imageUrls);
             const logoUrl = formContainer.logoUrl || '';
             const imageUrls = formContainer.imageUrls || [];
             const socialMediaArray = formContainer.socialMediaPairs || [];
             const menuTypes = formContainer.menuTypes || [];
             const specialDays = formContainer.specialDays || [];
-
+    
             console.log('Form Container Menu Types:', menuTypes);
     
+            // Properly format imageUrls as an array of strings
             formData.append('logoUrl', logoUrl);
-            formData.append('imageUrls', JSON.stringify(imageUrls));
+            formData.append('imageUrls', JSON.stringify(formContainer.imageUrls)); // Ensure it's a JSON array string
             formData.append('socialMedia', JSON.stringify(socialMediaArray));
             formData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
             formData.append('specialDays', JSON.stringify(specialDays));
@@ -150,11 +162,12 @@ class BusinessesTab {
                 website: formData.get('website'),
                 socialMedia: JSON.stringify(formContainer.socialMediaPairs || []),
                 logoUrl: formData.get('logoUrl'),
-                imageUrls: JSON.stringify(formContainer.imageUrls || []),
+                imageUrls: formContainer.imageUrls, // This should be an array
                 description: formData.get('description'),
                 menuTypes: formContainer.menuTypes.map(mt => mt.id),
                 specialDays: JSON.stringify(formContainer.specialDays || []),
             };
+            
     
             console.log('Data object before update:', data);
     
@@ -167,7 +180,6 @@ class BusinessesTab {
                     console.log('Business processed successfully');
                     const businessId = businessResponse.id;
     
-                    // Handle the form submission specific to the business type
                     if (type === 'eat' || type === 'play' || type === 'shop' || type === 'stay') {
                         const detailsFormData = new URLSearchParams();
                         detailsFormData.append('businessId', businessId);
@@ -211,7 +223,6 @@ class BusinessesTab {
                         }
                     }
     
-                    // Redirect after successful submission
                     setTimeout(() => {
                         this.router.navigate('businesses/list');
                     }, 1000);
@@ -221,42 +232,41 @@ class BusinessesTab {
             } catch (error) {
                 console.error('Error processing business:', error);
             } finally {
-                isSubmitting = false;  // Reset the flag after processing is complete
+                isSubmitting = false;
             }
         });
     
         if (businessData) {
             this.populateFormFields(formContainer, businessData);
         }
-    }
-    
-    
+    }  
     
     populateFormFields(formContainer, businessData) {
         const businessNameInput = formContainer.querySelector('#businessName');
-    const streetAddressInput = formContainer.querySelector('#streetAddress');
-    const mailingAddressInput = formContainer.querySelector('#mailingAddress');
-    const cityInput = formContainer.querySelector('#city');
-    const stateInput = formContainer.querySelector('#state');
-    const zipCodeInput = formContainer.querySelector('#zipCode');
-    const latitudeInput = formContainer.querySelector('#latitude');
-    const longitudeInput = formContainer.querySelector('#longitude');
-    const phoneInput = formContainer.querySelector('#phone');
-    const emailInput = formContainer.querySelector('#email');
-    const websiteInput = formContainer.querySelector('#website');
-
-    if (businessNameInput) businessNameInput.value = businessData.name || '';
-    if (streetAddressInput) streetAddressInput.value = businessData.street_address || '';
-    if (mailingAddressInput) mailingAddressInput.value = businessData.mailing_address || '';
-    if (cityInput) cityInput.value = businessData.city || '';
-    if (stateInput) stateInput.value = businessData.state || '';
-    if (zipCodeInput) zipCodeInput.value = businessData.zip || '';
-    if (latitudeInput) latitudeInput.value = businessData.lat || '';
-    if (longitudeInput) longitudeInput.value = businessData.long || '';
-    if (phoneInput) phoneInput.value = businessData.phone || '';
-    if (emailInput) emailInput.value = businessData.email || '';
-    if (websiteInput) websiteInput.value = businessData.web || '';
+        const streetAddressInput = formContainer.querySelector('#streetAddress');
+        const mailingAddressInput = formContainer.querySelector('#mailingAddress');
+        const cityInput = formContainer.querySelector('#city');
+        const stateInput = formContainer.querySelector('#state');
+        const zipCodeInput = formContainer.querySelector('#zipCode');
+        const latitudeInput = formContainer.querySelector('#latitude');
+        const longitudeInput = formContainer.querySelector('#longitude');
+        const phoneInput = formContainer.querySelector('#phone');
+        const emailInput = formContainer.querySelector('#email');
+        const websiteInput = formContainer.querySelector('#website');
+    
+        if (businessNameInput) businessNameInput.value = businessData.name || '';
+        if (streetAddressInput) streetAddressInput.value = businessData.street_address || '';
+        if (mailingAddressInput) mailingAddressInput.value = businessData.mailing_address || '';
+        if (cityInput) cityInput.value = businessData.city || '';
+        if (stateInput) stateInput.value = businessData.state || '';
+        if (zipCodeInput) zipCodeInput.value = businessData.zip || '';
+        if (latitudeInput) latitudeInput.value = businessData.lat || '';
+        if (longitudeInput) longitudeInput.value = businessData.long || '';
+        if (phoneInput) phoneInput.value = businessData.phone || '';
+        if (emailInput) emailInput.value = businessData.email || '';
+        if (websiteInput) websiteInput.value = businessData.web || '';
         
+        // Handle TinyMCE content
         const checkTinyMCE = setInterval(() => {
             const editor = tinymce.get('#description');
             if (editor) {
@@ -265,8 +275,10 @@ class BusinessesTab {
             }
         }, 100);
     
-        //initializeMenuSelection(formContainer, businessData.menu_types || []);
         console.log('Menu Types from businessData:', businessData.menu_types);
+    
+        // Initialize form fields with existing data
+        this.initializeMenuSelection(formContainer, businessData.menu_types || []);
     
         if (Array.isArray(businessData.socialMedia)) {
             businessData.socialMedia.forEach(pair => {
@@ -278,6 +290,7 @@ class BusinessesTab {
             });
         }
     
+        // Handle Logo
         formContainer.logoUrl = businessData.logoUrl || '';
         const logoPreviewContainer = formContainer.querySelector('#logo-preview');
         if (businessData.logoUrl) {
@@ -287,6 +300,7 @@ class BusinessesTab {
             logoPreviewContainer.appendChild(img);
         }
     
+        // Handle Images
         formContainer.imageUrls = businessData.imageUrls || [];
         const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
         if (Array.isArray(businessData.imageUrls)) {
@@ -298,6 +312,7 @@ class BusinessesTab {
             });
         }
     
+        // Handle Menu Types
         if (Array.isArray(businessData.menuTypes)) {
             businessData.menuTypes.forEach(type => {
                 const listItem = document.createElement('li');
@@ -307,6 +322,7 @@ class BusinessesTab {
             });
         }
     
+        // Handle Special Days
         if (Array.isArray(businessData.specialDays)) {
             businessData.specialDays.forEach(day => {
                 const listItem = document.createElement('div');
@@ -386,19 +402,50 @@ class BusinessesTab {
     
         const businessId = String(id);
         const businessData = this.store.getState().data.combined.find(business => String(business.business_id) === businessId);
-        
+    
         if (!businessData) {
             console.error(`Business with ID ${id} not found in store`);
             return;
         }
     
-        contentArea.innerHTML = eatForm();  // Assuming we're editing an "Eat" type business
+        let formHtml, initializeForm, businessType;
+    
+        // Determine the type of business and load the appropriate form
+        switch (businessData.type) {  // Assuming 'type' indicates the business type ('eat', 'play', etc.)
+            case 'eat':
+                formHtml = eatForm();
+                initializeForm = initializeEatForm;
+                businessType = 'eat';
+                break;
+            case 'play':
+                formHtml = playForm();
+                initializeForm = initializePlayForm;
+                businessType = 'play';
+                break;
+            case 'stay':
+                formHtml = stayForm();
+                initializeForm = initializeStayForm;
+                businessType = 'stay';
+                break;
+            case 'shop':
+                formHtml = shopForm();
+                initializeForm = initializeShopForm;
+                businessType = 'shop';
+                break;
+            default:
+                console.error(`Unsupported business type: ${businessData.type}`);
+                return;
+        }
+    
+        contentArea.innerHTML = formHtml;
+    
         setTimeout(() => {
-            this.initializeForm(contentArea, 'eat', initializeEatForm, businessData);
+            this.initializeForm(contentArea, businessType, initializeForm, businessData);
         }, 100);
     
         this.setActiveTab(`businesses/edit/${id}`);
     }
+    
 }
 
 export default BusinessesTab;

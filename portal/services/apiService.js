@@ -9,27 +9,29 @@ class ApiService {
     console.log(`Making request to: ${this.baseURL + url}`, options);
 
     try {
-      const response = await fetch(this.baseURL + url, options);
+        const response = await fetch(this.baseURL + url, options);
 
-      if (response.status === 401) {
-        // Handle unauthorized response
-        this.handleAuthError();
-        throw new Error('Unauthorized');
-      }
+        if (response.status === 401) {
+            // Handle unauthorized response
+            this.handleAuthError();
+            throw new Error('Unauthorized');
+        }
 
-      const responseBody = await response.text();
-      console.log('Response Body:', responseBody);
+        const responseBody = await response.text();
+        console.log('Response Body:', responseBody);
 
-      try {
-        return JSON.parse(responseBody);
-      } catch (jsonError) {
-        console.error('Failed to parse JSON response:', responseBody);
-        throw jsonError;
-      }
+        // Check if response is JSON
+        if (response.headers.get('content-type')?.includes('application/json')) {
+            return JSON.parse(responseBody);
+        } else {
+            // If not JSON, return the plain text or handle it as needed
+            return responseBody;
+        }
     } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+        console.error('API Error:', error);
+        throw error;
     }
+
   }
 
   handleAuthError() {
@@ -40,14 +42,22 @@ class ApiService {
   }
 
   async createBusiness(data) {
+    // Ensure correct data types
+    data.socialMedia = Array.isArray(data.socialMedia) ? data.socialMedia : [];
+    data.specialDays = Array.isArray(data.specialDays) ? data.specialDays : [];
+    data.logoUrl = data.logoUrl && Object.keys(data.logoUrl).length ? data.logoUrl : null;
+
+    // Send the formatted data
     return this.fetch('form-submission', {
-      method: 'POST',
-      body: data,
-      headers: {
-        'Accept': 'application/json'
-      }
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
     });
-  }
+}
+
 
   async updateBusiness(businessId, data) {
     return this.fetch(`form-submission/${businessId}`, {
@@ -65,7 +75,8 @@ class ApiService {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     return response;
@@ -77,7 +88,8 @@ class ApiService {
         method: 'PUT',
         body: formData,
         headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     });
     return response;
@@ -88,7 +100,8 @@ class ApiService {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     return response;
@@ -99,7 +112,8 @@ class ApiService {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     return response;
@@ -110,10 +124,24 @@ class ApiService {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     return response;
+  }
+
+  async deleteBusiness(businessId) {
+    const response = await this.fetch(`form-submission/${businessId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete business');
+    }
+
+    return response.json();
   }
 
   async fetchData() {

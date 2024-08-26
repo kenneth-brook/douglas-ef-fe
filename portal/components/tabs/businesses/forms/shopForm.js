@@ -4,729 +4,604 @@ import config from '../../../../utils/config.js';
 const apiService = new ApiService();
 
 export const shopForm = () => {
-  return `
-    <form id="combined-form" enctype="multipart/form-data">
-      <!-- Initial Business Form Fields -->
-      <div class="form-section">
-        <div class="form-toggle">
-          <label id="toggle-label">Company is currently <span id="toggle-status" style="color: red;">Inactive</span></label>
-          <input type="checkbox" id="active-toggle" name="active">
-        </div>
-      </div>
-      <div class="form-section">
+    return `
+        <form id="combined-form" enctype="multipart/form-data">
+            <!-- Initial Business Form Fields -->
+            <div class="form-section">
+                <div class="form-toggle">
+                    <label id="toggle-label">Company is currently <span id="toggle-status" style="color: red;">Inactive</span></label>
+                    <input type="checkbox" id="active-toggle" name="active">
+                </div>
+            </div>
+            <div class="form-section">
+                <!-- Business Details -->
+                ${renderBusinessDetailsSection()}
+            </div>
+            <div class="form-section">
+                <!-- Latitude, Longitude and Auto Fill -->
+                ${renderLatLongSection()}
+            </div>
+            <div class="form-section">
+                <!-- Contact Details -->
+                ${renderContactDetailsSection()}
+            </div>
+            <div class="form-section" id="social-media-section">
+                ${renderSocialMediaSection()}
+            </div>
+            <div class="form-section">
+                ${renderLogoUploadSection()}
+            </div>
+            <div class="form-section" id="image-upload-section">
+                ${renderImageUploadSection()}
+            </div>
+            <div class="form-section description-section">
+                ${renderDescriptionSection()}
+            </div>
+            <div class="form-section" id="menu-selection-section">
+                ${renderMenuSelectionSection()}
+            </div>
+            <div class="form-section">
+                <h3>Operational Hours</h3>
+                ${renderOperationalHoursSection()}
+            </div>
+            <div class="form-section special-day-section">
+                ${renderSpecialDaySection()}
+            </div>
+            <input type="hidden" id="businessId" name="businessId" value="">
+            <button type="button" id="submitButton">Submit</button>
+        </form>
+    `;
+};
+
+// Rendering functions for different sections
+const renderBusinessDetailsSection = () => `
+    <div class="form-group">
+        <label for="businessName">Business Name:</label>
+        <input type="text" id="businessName" name="businessName">
+    </div>
+    <div class="form-group">
+        <label for="streetAddress">Street Address:</label>
+        <input type="text" id="streetAddress" name="streetAddress">
+    </div>
+    <div class="form-group">
+        <label for="mailingAddress">Mailing Address:</label>
+        <input type="text" id="mailingAddress" name="mailingAddress">
+    </div>
+    <div class="form-group">
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city">
+    </div>
+    <div class="form-group">
+        <label for="state">State:</label>
+        <input type="text" id="state" name="state">
+    </div>
+    <div class="form-group">
+        <label for="zipCode">Zip Code:</label>
+        <input type="text" id="zipCode" name="zipCode">
+    </div>
+`;
+
+const renderLatLongSection = () => `
+    <div class="form-group">
+        <label for="latitude">Latitude:</label>
+        <input type="text" id="latitude" name="latitude" readonly>
+    </div>
+    <div class="form-group">
+        <label for="longitude">Longitude:</label>
+        <input type="text" id="longitude" name="longitude" readonly>
+    </div>
+    <button type="button" id="autofill-button">Auto Fill</button>
+`;
+
+const renderContactDetailsSection = () => `
+    <div class="form-group">
+        <label for="phone">Phone:</label>
+        <input type="tel" id="phone" name="phone">
+    </div>
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email">
+    </div>
+    <div class="form-group">
+        <label for="website">Website:</label>
+        <input type="url" id="website" name="website">
+    </div>
+`;
+
+const renderSocialMediaSection = () => `
+    <div class="form-group">
+        <label for="socialPlatform">Social Platform:</label>
+        <input type="text" id="socialPlatform" name="socialPlatform">
+    </div>
+    <div class="form-group">
+        <label for="socialAddress">Social Address:</label>
+        <input type="text" id="socialAddress" name="socialAddress">
+    </div>
+    <button type="button" id="add-social-media">Add</button>
+    <ul id="social-media-list"></ul>
+`;
+
+const renderLogoUploadSection = () => `
+    <div class="form-group">
+        <label for="logoUpload">Business Logo:</label>
+        <input type="file" id="logoUpload" name="logoUrl" accept="image/*">
+    </div>
+    <div id="logo-preview" class="thumbnail-container"></div>
+`;
+
+const renderImageUploadSection = () => `
+    <div class="form-group">
+        <label for="imageUpload">Upload Images:</label>
+        <input type="file" id="imageUpload" name="imageUrls" multiple>
+    </div>
+    <div id="image-thumbnails"></div>
+    <ul id="image-file-list"></ul>
+`;
+
+const renderDescriptionSection = () => `
+    <div class="description-container">
+        <label for="description">Business Description:</label>
+        <textarea id="description" class="description" name="description"></textarea>
+    </div>
+`;
+
+const renderMenuSelectionSection = () => `
+    <div style="display: flex; flex-direction: row; gap: 20px; width: 100%;">
         <div class="form-group">
-          <label for="businessName">Business Name:</label>
-          <input type="text" id="businessName" name="businessName">
-        </div>
-        <div class="form-group">
-          <label for="streetAddress">Street Address:</label>
-          <input type="text" id="streetAddress" name="streetAddress">
-        </div>
-        <div class="form-group">
-          <label for="mailingAddress">Mailing Address:</label>
-          <input type="text" id="mailingAddress" name="mailingAddress">
-        </div>
-        <div class="form-group">
-          <label for="city">City:</label>
-          <input type="text" id="city" name="city">
-        </div>
-        <div class="form-group">
-          <label for="state">State:</label>
-          <input type="text" id="state" name="state">
-        </div>
-        <div class="form-group">
-          <label for="zipCode">Zip Code:</label>
-          <input type="text" id="zipCode" name="zipCode">
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-group">
-          <label for="latitude">Latitude:</label>
-          <input type="text" id="latitude" name="latitude" readonly>
-        </div>
-        <div class="form-group">
-          <label for="longitude">Longitude:</label>
-          <input type="text" id="longitude" name="longitude" readonly>
-        </div>
-        <button type="button" id="autofill-button">Auto Fill</button>
-      </div>
-      <div class="form-section">
-        <div class="form-group">
-          <label for="phone">Phone:</label>
-          <input type="tel" id="phone" name="phone">
-        </div>
-        <div class="form-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email">
-        </div>
-        <div class="form-group">
-          <label for="website">Website:</label>
-          <input type="url" id="website" name="website">
-        </div>
-      </div>
-      <div class="form-section" id="social-media-section">
-        <div class="form-group">
-          <label for="socialPlatform">Social Platform:</label>
-          <input type="text" id="socialPlatform" name="socialPlatform">
-        </div>
-        <div class="form-group">
-          <label for="socialAddress">Social Address:</label>
-          <input type="text" id="socialAddress" name="socialAddress">
-        </div>
-        <button type="button" id="add-social-media">Add</button>
-        <ul id="social-media-list"></ul>
-      </div>
-      <div class="form-section">
-        <div class="form-group">
-          <label for="logoUpload">Business Logo:</label>
-          <input type="file" id="logoUpload" name="logoFile" accept="image/*">
-        </div>
-        <div id="logo-preview" class="thumbnail-container"></div>
-      </div>
-      <div class="form-section" id="image-upload-section">
-        <div class="form-group">
-          <label for="imageUpload">Upload Images:</label>
-          <input type="file" id="imageUpload" name="imageFiles" multiple>
-        </div>
-        <div id="image-thumbnails"></div>
-        <ul id="image-file-list"></ul>
-      </div>
-      <div class="form-section description-section">
-        <div class="description-container">
-          <label for="description">Business Description:</label>
-          <textarea id="description" class="description" name="description"></textarea>
-        </div>
-      </div>
-      
-      <!-- Menu Selection Section -->
-      <div class="form-section" id="menu-selection-section">
-        <div style="display: flex; flex-direction: row; gap: 20px; width: 100%;">
-          <div class="form-group">
             <label for="menuType">Menu Type:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <select id="menuType" name="menuType"></select>
-              <button type="button" id="add-menu-type">Add Selection</button>
+                <select id="menuType" name="menuType"></select>
+                <button type="button" id="add-menu-type">Add Selection</button>
             </div>
-          </div>
-          <div class="form-group">
+        </div>
+        <div class="form-group">
             <label for="newMenuType">New Menu Type:</label>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <input type="text" id="newMenuType" name="newMenuType">
-              <button type="button" id="add-new-menu-type">Add</button>
+                <input type="text" id="newMenuType" name="newMenuType">
+                <button type="button" id="add-new-menu-type">Add</button>
             </div>
-          </div>
         </div>
-        <ul id="menu-type-list"></ul>
-      </div>
-      <div class="form-section">
-        <h3>Operational Hours</h3>
-        <table class="hours-table">
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>Hours</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Monday</td>
-              <td><input type="text" id="hours-monday" name="hours-monday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Tuesday</td>
-              <td><input type="text" id="hours-tuesday" name="hours-tuesday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Wednesday</td>
-              <td><input type="text" id="hours-wednesday" name="hours-wednesday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Thursday</td>
-              <td><input type="text" id="hours-thursday" name="hours-thursday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Friday</td>
-              <td><input type="text" id="hours-friday" name="hours-friday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Saturday</td>
-              <td><input type="text" id="hours-saturday" name="hours-saturday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-            <tr>
-              <td>Sunday</td>
-              <td><input type="text" id="hours-sunday" name="hours-sunday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="form-section special-day-section">
-        <div class="special-day-container">
-          <label for="special-day">Special Day:</label>
-          <input type="text" id="special-day" class="special-day" name="special-day" />
-        </div>
-        <div class="altered-hours-container">
-          <label for="altered-hours">Altered Hours:</label>
-          <input type="text" id="altered-hours" class="altered-hours" name="altered-hours" />
-        </div>
-        <div class="add-day-container">
-          <button type="button" id="add-day-button">Add Day</button>
-        </div>
-        <div class="day-hours-list" id="day-hours-list"></div>
-      </div>
+    </div>
+    <ul id="menu-type-list"></ul>
+`;
 
-      <button type="button" id="submitButton">Submit</button>
-    </form>
-  `;
-}
+const renderOperationalHoursSection = () => `
+    <table class="hours-table">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${renderOperationalHoursRows()}
+        </tbody>
+    </table>
+`;
 
+const renderOperationalHoursRows = () => `
+    <tr>
+        <td>Monday</td>
+        <td><input type="text" id="hours-monday" name="hours-monday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Tuesday</td>
+        <td><input type="text" id="hours-tuesday" name="hours-tuesday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Wednesday</td>
+        <td><input type="text" id="hours-wednesday" name="hours-wednesday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Thursday</td>
+        <td><input type="text" id="hours-thursday" name="hours-thursday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Friday</td>
+        <td><input type="text" id="hours-friday" name="hours-friday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Saturday</td>
+        <td><input type="text" id="hours-saturday" name="hours-saturday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+    <tr>
+        <td>Sunday</td>
+        <td><input type="text" id="hours-sunday" name="hours-sunday" placeholder="e.g. 9:00 AM - 5:00 PM"></td>
+    </tr>
+`;
+
+const renderSpecialDaySection = () => `
+    <div class="special-day-container">
+        <label for="special-day">Special Day:</label>
+        <input type="text" id="special-day" class="special-day" name="special-day" />
+    </div>
+    <div class="altered-hours-container">
+        <label for="altered-hours">Altered Hours:</label>
+        <input type="text" id="altered-hours" class="altered-hours" name="altered-hours" />
+    </div>
+    <div class="add-day-container">
+        <button type="button" id="add-day-button">Add Day</button>
+    </div>
+    <div class="day-hours-list" id="day-hours-list"></div>
+`;
+
+// Coordinate handling
 export const attachCoordinatesHandler = (formContainer) => {
-  const autofillButton = formContainer.querySelector('#autofill-button');
-  autofillButton.addEventListener('click', handleAutofill);
-};
-
-const getUniqueFilename = (filename) => {
-  const date = new Date().toISOString().replace(/[-:.]/g, '');
-  console.log(`${date}_${filename}`)
-  return `${date}_${filename}`;
-};
-
-const uploadFilesToDreamHost = async (formData) => {
-  try {
-    console.log('Uploading files to DreamHost');
-    for (const [key, value] of formData.entries()) {
-      console.log(`${key}: ${value.name}`);
+    const autofillButton = formContainer.querySelector('#autofill-button');
+    if (autofillButton) {
+        autofillButton.addEventListener('click', handleAutofill);
     }
-
-    const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const responseBody = await response.text();
-    console.log('Raw response body:', responseBody);
-
-    const result = JSON.parse(responseBody);
-    console.log('Upload result:', result);
-
-    if (result.length === 0) {
-      console.error('Upload result is empty:', result);
-      throw new Error('Upload to DreamHost failed: empty result');
-    }
-
-    return result;
-  } catch (error) {
-    console.error('Error uploading files:', error);
-    throw error;
-  }
 };
-
-
 
 async function handleAutofill() {
-  const streetAddress = document.getElementById('streetAddress').value;
-  const city = document.getElementById('city').value;
-  const state = document.getElementById('state').value;
-  const zipCode = document.getElementById('zipCode').value;
+    const streetAddress = document.getElementById('streetAddress').value;
+    const city = document.getElementById('city').value;
+    const state = document.getElementById('state').value;
+    const zipCode = document.getElementById('zipCode').value;
 
-  if (!streetAddress || !city || !state || !zipCode) {
-    alert("Please fill in all address fields.");
-    return;
-  }
-
-  const address = `${streetAddress}, ${city}, ${state}, ${zipCode}`;
-  const apiKey = config.google; // Ensure this is correctly defined
-
-  if (!apiKey) {
-    console.error("API key is missing");
-    return;
-  }
-
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
-
-  try {
-    console.log(`Fetching geocode data from URL: ${url}`);
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status === 'OK') {
-      const location = data.results[0].geometry.location;
-      document.getElementById('latitude').value = location.lat;
-      document.getElementById('longitude').value = location.lng;
-    } else {
-      console.error("Geocode was not successful for the following reason:", data.status);
-      alert(`Geocode was not successful for the following reason: ${data.status}`);
+    if (!streetAddress || !city || !state || !zipCode) {
+        alert("Please fill in all address fields.");
+        return;
     }
-  } catch (error) {
-    console.error("Error fetching geocode data:", error);
-    alert("Error fetching geocode data. Please try again later.");
-  }
+
+    const address = `${streetAddress}, ${city}, ${state}, ${zipCode}`;
+    const apiKey = config.google;
+
+    if (!apiKey) {
+        console.error("API key is missing");
+        return;
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'OK') {
+            const location = data.results[0].geometry.location;
+            document.getElementById('latitude').value = location.lat;
+            document.getElementById('longitude').value = location.lng;
+        } else {
+            console.error("Geocode was not successful for the following reason:", data.status);
+            alert(`Geocode was not successful for the following reason: ${data.status}`);
+        }
+    } catch (error) {
+        console.error("Error fetching geocode data:", error);
+        alert("Error fetching geocode data. Please try again later.");
+    }
 }
 
-export const selectOnlyThis = (checkbox, groupName, callback) => {
-  const checkboxes = document.querySelectorAll(`input[name="${groupName}"]`);
-  checkboxes.forEach((item) => {
-    if (item !== checkbox) item.checked = false;
-  });
-  if (callback) {
-    callback(checkbox);
-  }
-};
-
-/* Social Functions */
-
+// Social Media handling
 export const attachSocialMediaHandler = (formContainer) => {
-  const addButton = formContainer.querySelector('#add-social-media');
-  const socialMediaList = formContainer.querySelector('#social-media-list');
-  const socialMediaPairs = [];
-
-  addButton.addEventListener('click', () => {
+    const addButton = formContainer.querySelector('#add-social-media');
+    const socialMediaList = formContainer.querySelector('#social-media-list');
     const platformInput = formContainer.querySelector('#socialPlatform');
     const addressInput = formContainer.querySelector('#socialAddress');
-    const platform = platformInput.value.trim();
-    const address = addressInput.value.trim();
 
-    if (platform && address) {
-      socialMediaPairs.push({ platform, address });
-      const listItem = document.createElement('li');
-      listItem.textContent = `${platform}: ${address}`;
-      listItem.dataset.platform = platform;
-      listItem.dataset.address = address;
-      socialMediaList.appendChild(listItem);
+    const socialMediaPairs = formContainer.socialMediaPairs || [];
 
-      // Clear inputs
-      platformInput.value = '';
-      addressInput.value = '';
-    }
-  });
+    addButton.addEventListener('click', () => {
+        const platform = platformInput.value.trim();
+        const address = addressInput.value.trim();
 
-  // Store the social media pairs in the form container for later retrieval
-  formContainer.socialMediaPairs = socialMediaPairs;
+        if (platform && address) {
+            socialMediaPairs.push({ platform, address });
+            const listItem = document.createElement('li');
+            listItem.textContent = `${platform}: ${address}`;
+            listItem.dataset.platform = platform;
+            listItem.dataset.address = address;
+            socialMediaList.appendChild(listItem);
+
+            // Clear inputs
+            platformInput.value = '';
+            addressInput.value = '';
+        }
+    });
+
+    formContainer.socialMediaPairs = socialMediaPairs;
 };
 
-/* Logo Upload */
-
-export const attachLogoUploadHandler = (formContainer) => {
+// Logo upload handling
+export const attachLogoUploadHandler = (formContainer, existingLogoUrl = '') => {
   const logoUploadInput = formContainer.querySelector('#logoUpload');
   const logoPreviewContainer = formContainer.querySelector('#logo-preview');
 
-  logoUploadInput.addEventListener('change', async () => {
-    const file = logoUploadInput.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        logoPreviewContainer.innerHTML = ''; // Clear previous logo preview
+  // If there is an existing logo, display it
+  if (existingLogoUrl) {
+      displayLogo(existingLogoUrl, logoPreviewContainer, formContainer);
+  }
 
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.alt = file.name;
-        img.className = 'thumbnail';
-
-        // Hover effect for enlargement
-        img.addEventListener('mouseover', () => {
-          const enlargeImg = document.createElement('img');
-          enlargeImg.src = img.src;
-          enlargeImg.className = 'enlarge-thumbnail';
-          document.body.appendChild(enlargeImg);
-
-          img.addEventListener('mousemove', (event) => {
-            enlargeImg.style.top = `${event.clientY + 15}px`;
-            enlargeImg.style.left = `${event.clientX + 15}px`;
-          });
-
-          img.addEventListener('mouseout', () => {
-            document.body.removeChild(enlargeImg);
-          });
-        });
-
-        const removeButton = document.createElement('button');
-        removeButton.textContent = 'Remove';
-        removeButton.className = 'remove-button';
-        removeButton.addEventListener('click', () => {
-          logoPreviewContainer.innerHTML = ''; // Clear the logo preview
-          formContainer.logoUrl = ''; // Reset the logo URL
-        });
-
-        logoPreviewContainer.appendChild(img);
-        logoPreviewContainer.appendChild(removeButton);
-      };
-      reader.readAsDataURL(file);
-
-      // Upload file to DreamHost
-      const uniqueFilename = getUniqueFilename(file.name);
-      const logoFormData = new FormData();
-      logoFormData.append('imageFiles[]', file, uniqueFilename); // Use 'imageFiles[]' key to match server-side script
-
-      try {
-        const uploadResult = await uploadFilesToDreamHost(logoFormData);
-        if (uploadResult && uploadResult[0]) {
-          formContainer.logoUrl = `uploads/${uniqueFilename}`;
-          console.log('Logo URL:', formContainer.logoUrl);
-        } else {
-          console.error('Failed to upload logo:', uploadResult);
-        }
-      } catch (error) {
-        console.error('Error during logo upload:', error);
-      }
-    }
-  });
+  if (logoUploadInput) {
+      logoUploadInput.addEventListener('change', async () => {
+          const file = logoUploadInput.files[0];
+          if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                  logoPreviewContainer.innerHTML = ''; // Clear previous preview
+                  displayLogo(e.target.result, logoPreviewContainer, formContainer, file);
+              };
+              reader.readAsDataURL(file);
+          }
+      });
+  }
 };
 
-/* Images Upload */
+// Image upload handling
+export const attachImageUploadHandler = (formContainer, existingImageUrls = []) => {
+  if (!Array.isArray(existingImageUrls)) {
+      existingImageUrls = []; // Ensure it's an array
+  }
 
-export const attachImageUploadHandler = (formContainer) => {
   const imageUploadInput = formContainer.querySelector('#imageUpload');
   const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
   const imageFileListContainer = formContainer.querySelector('#image-file-list');
 
-  formContainer.imageUrls = []; // Initialize image URLs array
+  // Initialize formContainer.imageUrls with existing images, ensuring no duplicates
+  formContainer.imageUrls = [...new Set(existingImageUrls)];
 
-  imageUploadInput.addEventListener('change', async () => {
-    const files = imageUploadInput.files;
+  // Display existing images
+  existingImageUrls.forEach(url => {
+      displayImage(url, imageThumbnailsContainer, formContainer);
+  });
 
-    for (const file of files) {
-      // Create and display thumbnail
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const thumbnailContainer = document.createElement('div');
-        thumbnailContainer.className = 'thumbnail-container';
+  // Define the event listener function before using it
+  const handleImageUpload = async () => {
+      const files = imageUploadInput.files;
 
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.alt = file.name;
-        img.className = 'thumbnail';
+      // Avoid adding the same image multiple times
+      for (const file of files) {
+          const uniqueFilename = getUniqueFilename(file.name);
+          const imageFormData = new FormData();
+          imageFormData.append('imageFiles[]', file, uniqueFilename);
 
-        // Hover effect for enlargement
-        img.addEventListener('mouseover', () => {
-          const enlargeImg = document.createElement('img');
-          enlargeImg.src = img.src;
-          enlargeImg.className = 'enlarge-thumbnail';
-          document.body.appendChild(enlargeImg);
+          try {
+              const uploadResult = await uploadFilesToDreamHost(imageFormData);
+              if (uploadResult && uploadResult[0]) {
+                  const newUrl = `uploads/${uniqueFilename}`;
+                  if (!formContainer.imageUrls.includes(newUrl)) {
+                      formContainer.imageUrls.push(newUrl);
+                      console.log('Image URLs after adding new image:', formContainer.imageUrls);
 
-          img.addEventListener('mousemove', (event) => {
-            enlargeImg.style.top = `${event.clientY + 15}px`;
-            enlargeImg.style.left = `${event.clientX + 15}px`;
-          });
-
-          img.addEventListener('mouseout', () => {
-            document.body.removeChild(enlargeImg);
-          });
-        });
-
-        const removeButton = document.createElement('button');
-        removeButton.textContent = 'Remove';
-        removeButton.className = 'remove-button';
-        removeButton.addEventListener('click', () => {
-          const index = formContainer.imageUrls.indexOf(file.name);
-          if (index > -1) {
-            formContainer.imageUrls.splice(index, 1);
+                      // Display the newly uploaded image
+                      displayImage(newUrl, imageThumbnailsContainer, formContainer);
+                  }
+              } else {
+                  console.error('Failed to upload image:', uploadResult);
+              }
+          } catch (error) {
+              console.error('Error during image upload:', error);
           }
-          imageThumbnailsContainer.removeChild(thumbnailContainer);
-          imageFileListContainer.removeChild(listItem);
-        });
-
-        thumbnailContainer.appendChild(img);
-        thumbnailContainer.appendChild(removeButton);
-        imageThumbnailsContainer.appendChild(thumbnailContainer);
-
-        // Display file name
-        const listItem = document.createElement('li');
-        listItem.textContent = file.name;
-        imageFileListContainer.appendChild(listItem);
-      };
-      reader.readAsDataURL(file);
-
-      // Upload file to DreamHost
-      const uniqueFilename = getUniqueFilename(file.name);
-      const imageFormData = new FormData();
-      imageFormData.append('imageFiles[]', file, uniqueFilename); // Use 'imageFiles[]' key to match server-side script
-
-      try {
-        const uploadResult = await uploadFilesToDreamHost(imageFormData);
-        if (uploadResult && uploadResult[0]) {
-          formContainer.imageUrls.push(`uploads/${uniqueFilename}`);
-          console.log('Image URLs:', formContainer.imageUrls);
-        } else {
-          console.error('Failed to upload image:', uploadResult);
-        }
-      } catch (error) {
-        console.error('Error during image upload:', error);
       }
-    }
-  });
+
+      // Clear the input after handling to prevent reprocessing the same files
+      imageUploadInput.value = '';
+  };
+
+  // Attach the event listener only once
+  imageUploadInput.removeEventListener('change', handleImageUpload);
+  imageUploadInput.addEventListener('change', handleImageUpload);
 };
 
-/* Description */
-
-export const initializeTinyMCE = (selector) => {
-  tinymce.init({
-    selector: selector,
-    license_key: 'gpl',
-    plugins: 'link code',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
-    setup: (editor) => {
-      editor.on('change', () => {
-        editor.save(); // Ensure the content is saved to the textarea
-      });
-    },
-  });
-};
-
-
-export const attachSpecialDayHandlers = (formContainer) => {
-  const specialDays = [];
-  formContainer.querySelector('#add-day-button').addEventListener('click', () => {
-    const specialDayInput = formContainer.querySelector('#special-day');
-    const alteredHoursInput = formContainer.querySelector('#altered-hours');
-    const specialDay = specialDayInput.value.trim();
-    const alteredHours = alteredHoursInput.value.trim();
-
-    if (specialDay && alteredHours) {
-      specialDays.push({ day: specialDay, hours: alteredHours });
-
-      // Display the added special day and altered hours
-      const dayHoursList = formContainer.querySelector('#day-hours-list');
-      const listItem = document.createElement('div');
-      listItem.className = 'day-hours-item';
-      listItem.textContent = `${specialDay}: ${alteredHours}`;
-      dayHoursList.appendChild(listItem);
-
-      // Clear input fields
-      specialDayInput.value = '';
-      alteredHoursInput.value = '';
-    } else {
-      alert('Please fill both fields.');
-    }
+// Display functions for Logo and Image
+function displayLogo(url, container, formContainer, file = null) {
+  const img = document.createElement('img');
+  img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+  img.className = 'thumbnail';
+  const removeButton = document.createElement('button');
+  removeButton.textContent = 'Remove';
+  removeButton.className = 'remove-button';
+  removeButton.addEventListener('click', () => {
+      container.innerHTML = '';
+      formContainer.logoUrl = ''; // Clear the stored URL or file
   });
 
-  // Attach specialDays array to formContainer for later use
-  formContainer.specialDays = specialDays;
-};
+  container.appendChild(img);
+  container.appendChild(removeButton);
 
-/* Initialization Function */
-
-export const initializeShopForm = async (formContainer) => {
-  attachCoordinatesHandler(formContainer);
-  attachSocialMediaHandler(formContainer);
-  attachLogoUploadHandler(formContainer);
-  attachImageUploadHandler(formContainer);
-  initializeTinyMCE('#description');
-  attachSpecialDayHandlers(formContainer);
-  await initializeMenuSelection(formContainer);
+  if (file) {
+      uploadFile(file, formContainer, 'logo');
+  } else {
+      formContainer.logoUrl = url; // Keep existing URL
+  }
 }
 
-export const showDaySelection = (checkbox) => {
-  const container = checkbox.closest('.form-group-container');
-  const daySelectionContainer = container.querySelector('#daySelectionContainer');
-  console.log('showDaySelection:', daySelectionContainer);
-  if (daySelectionContainer) {
-    if (checkbox.value !== '24/7') {
-      daySelectionContainer.style.display = 'block';
-    } else {
-      daySelectionContainer.style.display = 'none';
-    }
+function displayImage(url, container, formContainer, file = null) {
+  const img = document.createElement('img');
+  img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+  img.className = 'thumbnail';
+
+  const removeButton = document.createElement('button');
+  removeButton.textContent = 'Remove';
+  removeButton.className = 'remove-button';
+  removeButton.addEventListener('click', () => {
+      container.removeChild(img);
+      container.removeChild(removeButton);
+      formContainer.imageUrls = formContainer.imageUrls.filter(imageUrl => imageUrl !== url); // Remove from the list
+  });
+
+  container.appendChild(img);
+  container.appendChild(removeButton);
+
+  if (file) {
+      uploadFile(file, formContainer, 'image');
   } else {
-    console.error('Day selection container not found');
+      formContainer.imageUrls.push(url); // Keep existing URL
   }
-};
+}
 
-export const showMenuSelection = (checkbox) => {
-  const container = checkbox.closest('.form-group-container');
-  const menuSelectionContainer = container.querySelector('#menuSelectionContainer');
-  console.log('showMenuSelection:', menuSelectionContainer);
-  if (menuSelectionContainer) {
-    if (checkbox.value === 'MultipleMenus') {
-      menuSelectionContainer.style.display = 'block';
-    } else {
-      menuSelectionContainer.style.display = 'none';
-    }
-  } else {
-    console.error('Menu selection container not found');
-  }
-};
-
-window.updateTable = function() {
-  const operationModel = document.querySelector('input[name="operationModel"]:checked');
-  const menuStyle = document.querySelector('input[name="menuStyle"]:checked');
-  const daysOpen = Array.from(document.querySelectorAll('input[name="daysOpen"]:checked')).map(cb => cb.value);
-  const menuTypes = Array.from(document.querySelectorAll('input[name="menuType"]:checked')).map(cb => cb.value);
-
-  const tableContainer = document.getElementById('scheduleTableContainer');
-  const tableHeader = document.getElementById('scheduleTableHeader');
-  const tableBody = document.querySelector('#scheduleTable tbody');
-  tableBody.innerHTML = ''; // Clear existing table rows
-
-  if (!operationModel || !menuStyle || (menuStyle.value === 'MultipleMenus' && menuTypes.length === 0)) {
-    tableContainer.style.display = 'none';
-    return;
-  }
-
-  tableContainer.style.display = 'block';
-
-  const days = operationModel.value === '7Days/SelectHours' ? ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'] : daysOpen;
-
-  // Create table header
-  tableHeader.innerHTML = '<th>Day/Menu</th>';
-  if (menuStyle.value === 'MultipleMenus') {
-    menuTypes.forEach(menu => {
-      const th = document.createElement('th');
-      th.textContent = menu;
-      tableHeader.appendChild(th);
-    });
-  } else {
-    const th = document.createElement('th');
-    th.textContent = 'Hours Open';
-    tableHeader.appendChild(th);
-  }
-
-  // Create table rows
-  days.forEach(day => {
-    const row = document.createElement('tr');
-    const dayCell = document.createElement('td');
-    dayCell.textContent = day;
-    row.appendChild(dayCell);
-
-    if (menuStyle.value === 'MultipleMenus') {
-      menuTypes.forEach(() => {
-        const inputCell = document.createElement('td');
-        inputCell.innerHTML = '<input type="text" name="hoursOpen">';
-        row.appendChild(inputCell);
-      });
-    } else {
-      const inputCell = document.createElement('td');
-      inputCell.innerHTML = '<input type="text" name="hoursOpen">';
-      row.appendChild(inputCell);
-    }
-
-    tableBody.appendChild(row);
+// Description initialization
+export const initializeTinyMCE = (selector, content = '') => {
+  tinymce.init({
+      selector: selector,
+      license_key: 'gpl',
+      plugins: 'link code',
+      toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | code',
+      setup: (editor) => {
+          editor.on('init', () => {
+              if (content) {
+                  editor.setContent(content);
+              }
+          });
+      },
   });
 };
 
-export const initializeMenuSelection = async (formContainer) => {
+// Special Day handling
+export const attachSpecialDayHandlers = (formContainer) => {
+  const specialDays = [];
+  const addDayButton = formContainer.querySelector('#add-day-button');
+
+  if (addDayButton) {
+      addDayButton.addEventListener('click', () => {
+          const specialDayInput = formContainer.querySelector('#special-day');
+          const alteredHoursInput = formContainer.querySelector('#altered-hours');
+          const specialDay = specialDayInput.value.trim();
+          const alteredHours = alteredHoursInput.value.trim();
+
+          if (specialDay && alteredHours) {
+              specialDays.push({ day: specialDay, hours: alteredHours });
+
+              const dayHoursList = formContainer.querySelector('#day-hours-list');
+              const listItem = document.createElement('div');
+              listItem.className = 'day-hours-item';
+              listItem.textContent = `${specialDay}: ${alteredHours}`;
+              dayHoursList.appendChild(listItem);
+
+              specialDayInput.value = '';
+              alteredHoursInput.value = '';
+          } else {
+              alert('Please fill both fields.');
+          }
+      });
+
+      formContainer.specialDays = specialDays;
+  }
+};
+
+// Initialize form components
+export const initializeShopForm = async (formContainer, businessData = null) => {
+  if (!formContainer.imageUrls) {
+      formContainer.imageUrls = [];
+  }
+
+  attachCoordinatesHandler(formContainer);
+  attachSocialMediaHandler(formContainer, businessData ? businessData.socialMedia : []);
+  attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
+  attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
+  initializeTinyMCE('#description', businessData ? businessData.description : '');
+  await initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
+};
+
+// Menu Selection logic
+export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');
-  const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-  const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
-  const newMenuTypeInput = formContainer.querySelector('#newMenuType');
   const menuTypeList = formContainer.querySelector('#menu-type-list');
+  const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
+
+  if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton) {
+      console.error('One or more elements not found for Menu Selection initialization');
+      return;
+  }
 
   const menuTypes = [];
 
+  // Fetch and populate the menu type dropdown
   const fetchedMenuTypes = await getMenuTypes();
   if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
-    fetchedMenuTypes.forEach(type => {
-      const option = document.createElement('option');
-      option.value = type.id;
-      option.textContent = type.name;
-      menuTypeDropdown.appendChild(option);
-    });
+      fetchedMenuTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type.id;
+          option.textContent = type.name;
+          menuTypeDropdown.appendChild(option);
+      });
+
+      selectedMenuTypes.forEach(selectedTypeId => {
+          const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
+          if (type) {
+              const listItem = createMenuListItem(type.name, type.id);
+              menuTypeList.appendChild(listItem);
+              menuTypes.push({ id: type.id, name: type.name });
+          }
+      });
   } else {
-    console.error('Error fetching menu types:', fetchedMenuTypes);
+      console.error('Error fetching menu types:', fetchedMenuTypes);
   }
 
+  // Add event listener for adding new selections
   addMenuTypeButton.addEventListener('click', () => {
-    const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
-    if (selectedOption) {
-      const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
-      menuTypeList.appendChild(listItem);
-      menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-    }
-  });
-
-  addNewMenuTypeButton.addEventListener('click', async () => {
-    const newMenuType = newMenuTypeInput.value.trim();
-    if (newMenuType) {
-      const response = await addNewMenuType(newMenuType);
-      if (response && response.id) {
-        const option = document.createElement('option');
-        option.value = response.id;
-        option.textContent = newMenuType;
-        menuTypeDropdown.appendChild(option);
-
-        const listItem = createMenuListItem(newMenuType, response.id);
-        menuTypeList.appendChild(listItem);
-        menuTypes.push({ id: response.id, name: newMenuType });
-
-        newMenuTypeInput.value = ''; // Clear the input field
-      } else {
-        console.error('Error adding new menu type:', response);
+      const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
+      if (selectedOption) {
+          const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
+          menuTypeList.appendChild(listItem);
+          menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
       }
-    }
   });
 
-  // Attach menuTypes to formContainer for later use
   formContainer.menuTypes = menuTypes;
 
+  // Helper function to create the list item
   function createMenuListItem(name, id) {
-    const listItem = document.createElement('li');
-    listItem.textContent = name;
-    const removeButton = document.createElement('button');
-    removeButton.textContent = 'x';
-    removeButton.style.color = 'red';
-    removeButton.style.marginLeft = '10px';
-    removeButton.addEventListener('click', () => {
-      menuTypeList.removeChild(listItem);
-      const index = menuTypes.findIndex(type => type.id === id);
-      if (index > -1) {
-        menuTypes.splice(index, 1);
-      }
-    });
-    listItem.appendChild(removeButton);
-    return listItem;
+      const listItem = document.createElement('li');
+      listItem.textContent = name;
+      const removeButton = document.createElement('button');
+      removeButton.textContent = 'x';
+      removeButton.style.color = 'red';
+      removeButton.style.marginLeft = '10px';
+      removeButton.addEventListener('click', () => {
+          menuTypeList.removeChild(listItem);
+          const index = menuTypes.findIndex(type => type.id === id);
+          if (index > -1) {
+              menuTypes.splice(index, 1);
+          }
+      });
+      listItem.appendChild(removeButton);
+      return listItem;
   }
 };
 
+// Fetch menu types from the backend
 export const getMenuTypes = async () => {
   const tableName = `shop_type`;
   try {
-    const response = await apiService.fetch(`menu-types?table=${tableName}`);
-    console.log('Fetched menu types:', response); // Logging the response
-    return response; // Assuming response is the expected array
+      const response = await apiService.fetch(`menu-types?table=${tableName}`);
+      return response;
   } catch (error) {
-    console.error(`Error fetching menu types:`, error);
-    return [];
+      console.error(`Error fetching menu types:`, error);
+      return [];
   }
 };
 
-export const addNewMenuType = async (newMenuType) => {
-  const tableName = `shop_type`;
+// Handle file uploads
+async function uploadFile(file, formContainer, type) {
+  const formData = new FormData();
+  const uniqueFilename = getUniqueFilename(file.name);
+  formData.append('file', file, uniqueFilename);
+
   try {
-    const response = await apiService.fetch('menu-types', {
-      method: 'POST',
-      body: JSON.stringify({ name: newMenuType, table: tableName }),
-      headers: {
-        'Content-Type': 'application/json'
+      const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
+          method: 'POST',
+          body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result && result[0]) {
+          const uploadedUrl = `https://douglas.365easyflow.com/easyflow-images/uploads/${uniqueFilename}`;
+          if (type === 'logo') {
+              formContainer.logoUrl = uploadedUrl;
+          } else if (type === 'image') {
+              formContainer.imageUrls.push(uploadedUrl);
+          }
+      } else {
+          console.error('Failed to upload file:', result);
       }
-    });
-    console.log('New menu type added:', response); // Logging the response
-    return response; // Assuming response is the expected object
   } catch (error) {
-    console.error(`Error adding new menu type:`, error);
-    return { id: Date.now(), name: newMenuType }; // Fallback to a mock response
-  }
-};
-
-// Function to handle adding social media entries
-function addSocialMediaEntry() {
-  const platform = document.getElementById('socialPlatform').value;
-  const address = document.getElementById('socialAddress').value;
-
-  if (platform && address) {
-    const listItem = document.createElement('li');
-    listItem.textContent = `${platform}: ${address}`;
-    listItem.setAttribute('data-platform', platform);
-    listItem.setAttribute('data-address', address);
-
-    const socialMediaList = document.getElementById('social-media-list');
-    socialMediaList.appendChild(listItem);
-
-    // Clear inputs
-    document.getElementById('socialPlatform').value = '';
-    document.getElementById('socialAddress').value = '';
+      console.error('Error uploading file:', error);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const formContainer = document.querySelector('.tab-content');
-  if (formContainer) {
-    initializeShopForm(formContainer);
-  }
+  initializeShopForm(formContainer);
 });

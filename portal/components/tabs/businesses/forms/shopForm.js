@@ -493,6 +493,11 @@ export const initializeShopForm = async (formContainer, businessData = null) => 
   await initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
 };
 
+export const initializeShopFormWrapper = (formContainer, businessData) => {
+  initializeShopForm(formContainer, businessData);
+  initializeMenuSelection(formContainer, businessData.menu_types || []);
+};
+
 // Menu Selection logic
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');

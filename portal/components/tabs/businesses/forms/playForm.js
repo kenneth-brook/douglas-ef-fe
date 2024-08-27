@@ -465,6 +465,11 @@ export const initializePlayForm = async (formContainer, businessData = null) => 
     attachSpecialDayHandlers(formContainer, businessData ? businessData.specialDays : []);
 };
 
+export const initializePlayFormWrapper = (formContainer, businessData) => {
+    initializePlayForm(formContainer, businessData);
+    initializeMenuSelection(formContainer, businessData.menu_types || []);
+};
+
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
     const menuTypeDropdown = formContainer.querySelector('#menuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');

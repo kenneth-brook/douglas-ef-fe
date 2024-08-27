@@ -420,7 +420,7 @@ const initializeAverageCostDropdown = async (formContainer, selectedCost = null)
 
 
 // Initialize form components
-export const initializeEatForm = async (formContainer, businessData = null) => {
+export const initializeEatForm = (formContainer, businessData) => {
     if (!formContainer.imageUrls) {
         formContainer.imageUrls = [];
     }
@@ -432,8 +432,8 @@ export const initializeEatForm = async (formContainer, businessData = null) => {
     attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
     attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
     initializeTinyMCE('#description', businessData ? businessData.description : '');
-    await initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
-    await initializeAverageCostDropdown(formContainer, businessData ? businessData.cost : null);
+    initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
+    initializeAverageCostDropdown(formContainer, businessData ? businessData.cost : null);
 };
 
 // TinyMCE initialization
@@ -453,8 +453,23 @@ const initializeTinyMCE = (selector, content = '') => {
     });
 };
 
+export const initializeEatFormWrapper = (formContainer, businessData) => {
+    if (!businessData) {
+        businessData = {}; // Set to an empty object if null to avoid accessing properties on null
+    }
+
+    console.log('Received businessData in eatForm:', businessData);
+    initializeEatForm(formContainer, businessData);
+
+    const selectedMenuTypes = businessData.menu_types || []; // Safely access menu_types
+    console.log('Initializing menu selection with:', { formContainer, selectedMenuTypes });
+
+    initializeMenuSelection(formContainer, selectedMenuTypes);
+};
+
 // Menu Selection logic
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
+    console.log('Initializing menu selection with:', { formContainer, selectedMenuTypes });
     const menuTypeDropdown = formContainer.querySelector('#menuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
     const addMenuTypeButton = formContainer.querySelector('#add-menu-type');

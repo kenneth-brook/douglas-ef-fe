@@ -1,7 +1,8 @@
-import { eatForm, initializeEatForm } from './forms/eatForm.js';
-import { stayForm, initializeStayForm } from './forms/stayForm.js';
-import { playForm, initializePlayForm } from './forms/playForm.js';
-import { shopForm, initializeShopForm } from './forms/shopForm.js';
+import { eatForm, initializeEatFormWrapper } from './forms/eatForm.js';
+import { stayForm, initializeStayFormWrapper } from './forms/stayForm.js';
+import { playForm, initializePlayFormWrapper } from './forms/playForm.js';
+import { shopForm, initializeShopFormWrapper } from './forms/shopForm.js';
+
 import ListBusinesses from './listBusinesses.js';
 
 class BusinessesTab {
@@ -68,84 +69,91 @@ class BusinessesTab {
         });
     }
 
-    loadBusinessForm(type) {
-        const contentArea = document.querySelector('.tab-content');
-        contentArea.innerHTML = ''; // Clear existing content
-
+    getFormAndInitializer(type) {
         let formHtml, initializeForm;
         switch (type) {
             case 'eat':
                 formHtml = eatForm();
-                initializeForm = initializeEatForm;
+                initializeForm = initializeEatFormWrapper;
                 break;
             case 'stay':
                 formHtml = stayForm();
-                initializeForm = initializeStayForm;
+                initializeForm = initializeStayFormWrapper;
                 break;
             case 'play':
                 formHtml = playForm();
-                initializeForm = initializePlayForm;
+                initializeForm = initializePlayFormWrapper;
                 break;
             case 'shop':
                 formHtml = shopForm();
-                initializeForm = initializeShopForm;
+                initializeForm = initializeShopFormWrapper;
                 break;
             default:
-                console.error("Invalid business type selected");
-                return;
+                console.error(`Unsupported business type: ${type}`);
+                return {};
         }
-
-        contentArea.innerHTML = formHtml;
-
-        // Ensure the DOM is updated before initializing TinyMCE
-        setTimeout(() => {
-            this.initializeForm(contentArea, type, initializeForm);
-        }, 100); // Adjust delay if needed
+    
+        // Add log before returning
+        console.log('Returning from getFormAndInitializer:', { formHtml, initializeForm });
+    
+        return { formHtml, initializeForm };
     }
 
-    async initializeForm(formContainer, type, initializeForm, businessData = null) {
-        if (businessData && businessData.imageUrls) {
-            formContainer.imageUrls = [...new Set(businessData.imageUrls)]; // Remove any duplicates
-        } else {
-            formContainer.imageUrls = []; // Start fresh for new entries
+    loadBusinessForm(type, businessData) {
+        const { formHtml, initializeForm } = this.getFormAndInitializer(type);
+        console.log('Returned from getFormAndInitializer:', { formHtml, initializeForm });
+        const contentArea = document.querySelector('.tab-content');
+        contentArea.innerHTML = formHtml;
+        this.initializeForm(contentArea, type, initializeForm, businessData);
+    }
+
+    async initializeForm(formContainer, initializeForm, type, businessData ) {
+        console.log('Initializing form with:', { initializeForm, businessData });
+        console.log('Type of initializeForm:', typeof initializeForm);
+
+        if (typeof initializeForm !== 'function') {
+            console.error('initializeForm is not a function');
+            return;
         }
 
+        if (businessData && businessData.imageUrls) {
+            formContainer.imageUrls = [...new Set(businessData.imageUrls)];
+        } else {
+            formContainer.imageUrls = [];
+        }
+
+        // Pass `businessData` into `initializeForm` to ensure correct initialization 
+        console.log('Initializing form:', { type, initializeForm });
         initializeForm(formContainer, businessData);
-        
+
+
         const combinedForm = formContainer.querySelector('#combined-form');
         const submitButton = formContainer.querySelector('#submitButton');
-        
+
         let isSubmitting = false;
-    
+
         submitButton.addEventListener('click', async (event) => {
             event.preventDefault();
-    
+
             if (isSubmitting) return;
             isSubmitting = true;
-    
-            console.log('Submit button clicked and default prevented');
-            console.log('Image URLs before submission:', formContainer.imageUrls);
+
             tinymce.triggerSave();
 
-            //formContainer.imageUrls = [];
             formContainer.imageUrls = [...new Set(formContainer.imageUrls)];
-
             const formData = new FormData(combinedForm);
-            console.log('Image URLs before submission:', formContainer.imageUrls);
+
             const logoUrl = formContainer.logoUrl || '';
-            const socialMediaArray = formContainer.socialMediaPairs || '[]';
+            const socialMediaArray = formContainer.socialMediaPairs || [];
             const menuTypes = formContainer.menuTypes || [];
-            const specialDays = formContainer.specialDays || '[]';
-    
-            console.log('Form Container Menu Types:', menuTypes);
-    
-            // Properly format imageUrls as an array of strings
+            const specialDays = formContainer.specialDays || [];
+
             formData.append('logoUrl', logoUrl);
-            formData.append('imageUrls', JSON.stringify(formContainer.imageUrls)); // Ensure it's a JSON array string
+            formData.append('imageUrls', JSON.stringify(formContainer.imageUrls));
             formData.append('socialMedia', JSON.stringify(socialMediaArray));
             formData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
             formData.append('specialDays', JSON.stringify(specialDays));
-    
+
             const data = {
                 active: formData.get('active') ? 'true' : 'false',
                 businessName: formData.get('businessName'),
@@ -159,69 +167,52 @@ class BusinessesTab {
                 phone: formData.get('phone'),
                 email: formData.get('email'),
                 website: formData.get('website'),
-                socialMedia: JSON.stringify(formContainer.socialMediaPairs || []),
-                logoUrl: formData.get('logoUrl'),
-                imageUrls: formContainer.imageUrls, // This should be an array
+                socialMedia: JSON.stringify(socialMediaArray),
+                logoUrl: logoUrl,
+                imageUrls: formContainer.imageUrls,
                 description: formData.get('description'),
-                menuTypes: formContainer.menuTypes.map(mt => mt.id),
-                specialDays: JSON.stringify(formContainer.specialDays || []),
+                menuTypes: menuTypes.map(mt => mt.id),
+                specialDays: specialDays
             };
-            
-    
-            console.log('Data object before update:', data);
-    
+
             try {
                 const businessResponse = businessData 
                     ? await this.apiService.updateBusiness(businessData.id, data)
                     : await this.apiService.createBusiness(data);
-    
+
                 if (businessResponse && businessResponse.id) {
-                    console.log('Business processed successfully');
                     const businessId = businessResponse.id;
-    
-                    if (type === 'eat' || type === 'play' || type === 'shop' || type === 'stay') {
-                            const detailsFormData = new URLSearchParams();
-                            detailsFormData.append('businessId', businessId);
-                            detailsFormData.append('menuTypes', JSON.stringify(formContainer.menuTypes.map(mt => mt.id)));
-                            detailsFormData.append('specialDays', JSON.stringify(formContainer.specialDays || []));
-                        
-                        if (type === 'eat' || type === 'stay') {
+
+                    if (['eat', 'play', 'shop', 'stay'].includes(type)) {
+                        const detailsFormData = new URLSearchParams();
+                        detailsFormData.append('businessId', businessId);
+                        detailsFormData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
+                        detailsFormData.append('specialDays', JSON.stringify(specialDays));
+
+                        if (['eat', 'stay'].includes(type)) {
                             detailsFormData.append('averageCost', formData.get('averageCost'));
                         }
-    
-                        if (type === 'play' || type === 'shop') {
+
+                        if (['play', 'shop'].includes(type)) {
                             const operationalHours = this.collectOperationalHours(formContainer);
                             detailsFormData.append('hours', JSON.stringify(operationalHours));
                         }
-    
+
                         try {
                             if (type === 'eat') {
-                                const eatResponse = businessData
-                                    ? await this.apiService.updateEatForm(businessId, detailsFormData)
-                                    : await this.apiService.submitEatForm(detailsFormData);
-                                console.log('Eat form data submitted or updated', eatResponse);
+                                await this.apiService.submitEatForm(detailsFormData);
                             } else if (type === 'play') {
-                                const playResponse = businessData
-                                    ? await this.apiService.updatePlayForm(businessId, detailsFormData)
-                                    : await this.apiService.submitPlayForm(detailsFormData);
-                                console.log('Play form data submitted or updated', playResponse);
+                                await this.apiService.submitPlayForm(detailsFormData);
                             } else if (type === 'shop') {
-                                const shopResponse = businessData
-                                    ? await this.apiService.updateShopForm(businessId, detailsFormData)
-                                    : await this.apiService.submitShopForm(detailsFormData);
-                                console.log('Shop form data submitted or updated', shopResponse);
+                                await this.apiService.submitShopForm(detailsFormData);
                             } else if (type === 'stay') {
-                                const stayResponse = businessData
-                                    ? await this.apiService.updateStayForm(businessId, detailsFormData)
-                                    : await this.apiService.submitStayForm(detailsFormData);
-                                console.log('Stay form data submitted or updated', stayResponse);
+                                await this.apiService.submitStayForm(detailsFormData);
                             }
-                            
                         } catch (error) {
                             console.error('Error submitting additional form data:', error);
                         }
                     }
-    
+
                     setTimeout(() => {
                         this.router.navigate('businesses/list');
                     }, 1000);
@@ -234,11 +225,11 @@ class BusinessesTab {
                 isSubmitting = false;
             }
         });
-    
+
         if (businessData) {
             this.populateFormFields(formContainer, businessData);
         }
-    }  
+    }
     
     populateFormFields(formContainer, businessData) {
         const businessNameInput = formContainer.querySelector('#businessName');
@@ -407,39 +398,14 @@ class BusinessesTab {
             return;
         }
     
-        let formHtml, initializeForm, businessType;
+        console.log('Found businessData:', businessData); // Add this line to confirm the data is retrieved
     
-        // Determine the type of business and load the appropriate form
-        switch (businessData.type) {  // Assuming 'type' indicates the business type ('eat', 'play', etc.)
-            case 'eat':
-                formHtml = eatForm();
-                initializeForm = initializeEatForm;
-                businessType = 'eat';
-                break;
-            case 'play':
-                formHtml = playForm();
-                initializeForm = initializePlayForm;
-                businessType = 'play';
-                break;
-            case 'stay':
-                formHtml = stayForm();
-                initializeForm = initializeStayForm;
-                businessType = 'stay';
-                break;
-            case 'shop':
-                formHtml = shopForm();
-                initializeForm = initializeShopForm;
-                businessType = 'shop';
-                break;
-            default:
-                console.error(`Unsupported business type: ${businessData.type}`);
-                return;
-        }
+        const { formHtml, initializeForm } = this.getFormAndInitializer(businessData.type);
     
         contentArea.innerHTML = formHtml;
     
-        setTimeout(() => {
-            this.initializeForm(contentArea, businessType, initializeForm, businessData);
+        setTimeout((businessData) => {
+            this.initializeForm(contentArea, initializeForm, businessData);
         }, 100);
     
         this.setActiveTab(`businesses/edit/${id}`);

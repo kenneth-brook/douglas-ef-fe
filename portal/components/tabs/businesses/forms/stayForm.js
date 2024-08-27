@@ -452,6 +452,11 @@ const initializeTinyMCE = (selector, content = '') => {
     });
 };
 
+export const initializeStayFormWrapper = (formContainer, businessData) => {
+  initializeStayForm(formContainer, businessData);
+  initializeMenuSelection(formContainer, businessData.menu_types || []);
+};
+
 // Menu Selection logic
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');

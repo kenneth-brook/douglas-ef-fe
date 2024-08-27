@@ -133,10 +133,9 @@ class BusinessesTab {
             const formData = new FormData(combinedForm);
             console.log('Image URLs before submission:', formContainer.imageUrls);
             const logoUrl = formContainer.logoUrl || '';
-            const imageUrls = formContainer.imageUrls || [];
-            const socialMediaArray = formContainer.socialMediaPairs || [];
+            const socialMediaArray = formContainer.socialMediaPairs || '[]';
             const menuTypes = formContainer.menuTypes || [];
-            const specialDays = formContainer.specialDays || [];
+            const specialDays = formContainer.specialDays || '[]';
     
             console.log('Form Container Menu Types:', menuTypes);
     
@@ -181,10 +180,10 @@ class BusinessesTab {
                     const businessId = businessResponse.id;
     
                     if (type === 'eat' || type === 'play' || type === 'shop' || type === 'stay') {
-                        const detailsFormData = new URLSearchParams();
-                        detailsFormData.append('businessId', businessId);
-                        detailsFormData.append('menuTypes', formData.get('menuTypes'));
-                        detailsFormData.append('specialDays', formData.get('specialDays'));
+                            const detailsFormData = new URLSearchParams();
+                            detailsFormData.append('businessId', businessId);
+                            detailsFormData.append('menuTypes', JSON.stringify(formContainer.menuTypes.map(mt => mt.id)));
+                            detailsFormData.append('specialDays', JSON.stringify(formContainer.specialDays || []));
                         
                         if (type === 'eat' || type === 'stay') {
                             detailsFormData.append('averageCost', formData.get('averageCost'));

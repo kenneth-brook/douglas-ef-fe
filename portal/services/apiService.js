@@ -76,7 +76,7 @@ class ApiService {
       body: formData,
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
     return response;
@@ -93,7 +93,7 @@ class ApiService {
         }
     });
     return response;
-}
+  }
 
   async submitPlayForm(formData) {
     const response = await this.fetch('play-form-submission', {
@@ -101,8 +101,21 @@ class ApiService {
       body: formData,
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
+    });
+    return response;
+  }
+
+  async updatePlayForm(playFormId, formData) {
+    console.log('Menu Types before update:', formData.menuTypes);
+    const response = await this.fetch(`play-form-submission/${playFormId}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
     });
     return response;
   }
@@ -113,8 +126,21 @@ class ApiService {
       body: formData,
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
+    });
+    return response;
+  }
+
+  async updateShopForm(shopFormId, formData) {
+    console.log('Menu Types before update:', formData.menuTypes);
+    const response = await this.fetch(`shop-form-submission/${shopFormId}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
     });
     return response;
   }
@@ -125,8 +151,21 @@ class ApiService {
       body: formData,
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
+    });
+    return response;
+  }
+
+  async updateStayForm(stayFormId, formData) {
+    console.log('Menu Types before update:', formData.menuTypes);
+    const response = await this.fetch(`stay-form-submission/${stayFormId}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
     });
     return response;
   }

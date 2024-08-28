@@ -103,57 +103,60 @@ class BusinessesTab {
         const { formHtml, initializeForm } = this.getFormAndInitializer(type);
         console.log('Returned from getFormAndInitializer:', { formHtml, initializeForm });
         const contentArea = document.querySelector('.tab-content');
+        console.log('Business data being passed from loadBusinessForm:', businessData);
         contentArea.innerHTML = formHtml;
-        this.initializeForm(contentArea, type, initializeForm, businessData);
+        this.initializeForm(contentArea, initializeForm, businessData);
     }
 
-    async initializeForm(formContainer, initializeForm, type, businessData ) {
+    async initializeForm(formContainer, initializeForm, businessData, type = null) {
         console.log('Initializing form with:', { initializeForm, businessData });
-        console.log('Type of initializeForm:', typeof initializeForm);
-
+    
+        // Determine the type either from businessData or the passed type argument
+        const businessType = businessData ? businessData.type : type;
+        console.log('Determined businessType:', businessType);
+    
         if (typeof initializeForm !== 'function') {
             console.error('initializeForm is not a function');
             return;
         }
-
+    
         if (businessData && businessData.imageUrls) {
             formContainer.imageUrls = [...new Set(businessData.imageUrls)];
         } else {
             formContainer.imageUrls = [];
         }
-
+    
         // Pass `businessData` into `initializeForm` to ensure correct initialization 
-        console.log('Initializing form:', { type, initializeForm });
+        console.log('Initializing form:', { businessType, initializeForm });
         initializeForm(formContainer, businessData);
-
-
+    
         const combinedForm = formContainer.querySelector('#combined-form');
         const submitButton = formContainer.querySelector('#submitButton');
-
+    
         let isSubmitting = false;
-
+    
         submitButton.addEventListener('click', async (event) => {
             event.preventDefault();
-
+    
             if (isSubmitting) return;
             isSubmitting = true;
-
+    
             tinymce.triggerSave();
-
+    
             formContainer.imageUrls = [...new Set(formContainer.imageUrls)];
             const formData = new FormData(combinedForm);
-
+    
             const logoUrl = formContainer.logoUrl || '';
             const socialMediaArray = formContainer.socialMediaPairs || [];
             const menuTypes = formContainer.menuTypes || [];
             const specialDays = formContainer.specialDays || [];
-
+    
             formData.append('logoUrl', logoUrl);
             formData.append('imageUrls', JSON.stringify(formContainer.imageUrls));
             formData.append('socialMedia', JSON.stringify(socialMediaArray));
             formData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
             formData.append('specialDays', JSON.stringify(specialDays));
-
+    
             const data = {
                 active: formData.get('active') ? 'true' : 'false',
                 businessName: formData.get('businessName'),
@@ -174,45 +177,61 @@ class BusinessesTab {
                 menuTypes: menuTypes.map(mt => mt.id),
                 specialDays: specialDays
             };
-
+    
             try {
-                const businessResponse = businessData 
+                const businessResponse = businessData && businessData.id
                     ? await this.apiService.updateBusiness(businessData.id, data)
                     : await this.apiService.createBusiness(data);
-
+    
                 if (businessResponse && businessResponse.id) {
                     const businessId = businessResponse.id;
-
-                    if (['eat', 'play', 'shop', 'stay'].includes(type)) {
+    
+                    if (['eat', 'play', 'shop', 'stay'].includes(businessType)) {
                         const detailsFormData = new URLSearchParams();
                         detailsFormData.append('businessId', businessId);
                         detailsFormData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
                         detailsFormData.append('specialDays', JSON.stringify(specialDays));
-
-                        if (['eat', 'stay'].includes(type)) {
+    
+                        if (['eat', 'stay'].includes(businessType)) {
                             detailsFormData.append('averageCost', formData.get('averageCost'));
                         }
-
-                        if (['play', 'shop'].includes(type)) {
+    
+                        if (['play', 'shop'].includes(businessType)) {
                             const operationalHours = this.collectOperationalHours(formContainer);
                             detailsFormData.append('hours', JSON.stringify(operationalHours));
                         }
-
+    
                         try {
-                            if (type === 'eat') {
-                                await this.apiService.submitEatForm(detailsFormData);
-                            } else if (type === 'play') {
-                                await this.apiService.submitPlayForm(detailsFormData);
-                            } else if (type === 'shop') {
-                                await this.apiService.submitShopForm(detailsFormData);
-                            } else if (type === 'stay') {
-                                await this.apiService.submitStayForm(detailsFormData);
+                            if (businessType === 'eat') {
+                                if (businessData && businessData.id) {
+                                    await this.apiService.updateEatForm(businessId, detailsFormData);
+                                } else {
+                                    await this.apiService.submitEatForm(detailsFormData);
+                                }
+                            } else if (businessType === 'play') {
+                                if (businessData && businessData.id) {
+                                    await this.apiService.updatePlayForm(businessId, detailsFormData);
+                                } else {
+                                    await this.apiService.submitPlayForm(detailsFormData);
+                                }
+                            } else if (businessType === 'shop') {
+                                if (businessData && businessData.id) {
+                                    await this.apiService.updateShopForm(businessId, detailsFormData);
+                                } else {
+                                    await this.apiService.submitShopForm(detailsFormData);
+                                }
+                            } else if (businessType === 'stay') {
+                                if (businessData && businessData.id) {
+                                    await this.apiService.updateStayForm(businessId, detailsFormData);
+                                } else {
+                                    await this.apiService.submitStayForm(detailsFormData);
+                                }
                             }
                         } catch (error) {
                             console.error('Error submitting additional form data:', error);
                         }
                     }
-
+    
                     setTimeout(() => {
                         this.router.navigate('businesses/list');
                     }, 1000);
@@ -225,11 +244,11 @@ class BusinessesTab {
                 isSubmitting = false;
             }
         });
-
+    
         if (businessData) {
             this.populateFormFields(formContainer, businessData);
         }
-    }
+    }    
     
     populateFormFields(formContainer, businessData) {
         const businessNameInput = formContainer.querySelector('#businessName');
@@ -268,7 +287,11 @@ class BusinessesTab {
         console.log('Menu Types from businessData:', businessData.menu_types);
     
         // Initialize form fields with existing data
-        this.initializeMenuSelection(formContainer, businessData.menu_types || []);
+        if (typeof this.initializeMenuSelection === 'function') {
+            this.initializeMenuSelection(formContainer, businessData.menu_types || []);
+        } else {
+            console.error('initializeMenuSelection is not defined or not a function');
+        }
     
         if (Array.isArray(businessData.socialMedia)) {
             businessData.socialMedia.forEach(pair => {
@@ -403,10 +426,10 @@ class BusinessesTab {
         const { formHtml, initializeForm } = this.getFormAndInitializer(businessData.type);
     
         contentArea.innerHTML = formHtml;
-    
-        setTimeout((businessData) => {
-            this.initializeForm(contentArea, initializeForm, businessData);
-        }, 100);
+
+        //this.initializeForm(contentArea, initializeForm, businessData);
+
+        this.loadBusinessForm(businessData.type, businessData);
     
         this.setActiveTab(`businesses/edit/${id}`);
     }

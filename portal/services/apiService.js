@@ -177,11 +177,19 @@ class ApiService {
     });
 
     if (!response.ok) {
+        console.error('Delete request failed with status:', response.status, response.statusText);
         throw new Error('Failed to delete business');
     }
 
-    return response.json();
-  }
+    try {
+        const responseBody = await response.json();
+        console.log('Delete response body:', responseBody);
+        return responseBody;
+    } catch (error) {
+        console.error('Failed to parse response JSON:', error);
+        return { message: 'Business deleted successfully (no JSON response)' };
+    }
+}
 
   async fetchData() {
     const endpoints = {

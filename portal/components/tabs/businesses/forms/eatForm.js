@@ -427,13 +427,36 @@ export const initializeEatForm = (formContainer, businessData) => {
 
     console.log('Received businessData in eatForm:', businessData);
     console.log('initializeEatForm called with formContainer:', formContainer);
+
     attachCoordinatesHandler(formContainer);
     attachSocialMediaHandler(formContainer, businessData ? businessData.socialMedia : []);
     attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
     attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
     initializeTinyMCE('#description', businessData ? businessData.description : '');
-    initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
     initializeAverageCostDropdown(formContainer, businessData ? businessData.cost : null);
+
+    const activeToggle = formContainer.querySelector('#active-toggle');
+    const toggleStatus = formContainer.querySelector('#toggle-status');
+
+    if (businessData && businessData.active) {
+        activeToggle.checked = true;
+        toggleStatus.textContent = 'Active';
+        toggleStatus.style.color = 'green';
+    } else {
+        activeToggle.checked = false;
+        toggleStatus.textContent = 'Inactive';
+        toggleStatus.style.color = 'red';
+    }
+
+    activeToggle.addEventListener('change', () => {
+        if (activeToggle.checked) {
+            toggleStatus.textContent = 'Active';
+            toggleStatus.style.color = 'green';
+        } else {
+            toggleStatus.textContent = 'Inactive';
+            toggleStatus.style.color = 'red';
+        }
+    });
 };
 
 // TinyMCE initialization
@@ -464,7 +487,7 @@ export const initializeEatFormWrapper = (formContainer, businessData) => {
     const selectedMenuTypes = businessData.menu_types || []; // Safely access menu_types
     console.log('Initializing menu selection with:', { formContainer, selectedMenuTypes });
 
-    initializeMenuSelection(formContainer, selectedMenuTypes);
+    initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
 };
 
 // Menu Selection logic
@@ -498,9 +521,12 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
         selectedMenuTypes.forEach(selectedTypeId => {
             const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
             if (type) {
-                const listItem = createMenuListItem(type.name, type.id);
-                menuTypeList.appendChild(listItem);
-                menuTypes.push({ id: type.id, name: type.name });
+                const existingItem = menuTypeList.querySelector(`li[data-id="${type.id}"]`);
+                if (!existingItem) {
+                    const listItem = createMenuListItem(type.name, type.id);
+                    menuTypeList.appendChild(listItem);
+                    menuTypes.push({ id: type.id, name: type.name });
+                }
             }
         });
     } else {
@@ -511,10 +537,16 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
     addMenuTypeButton.addEventListener('click', () => {
         const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
         if (selectedOption) {
+            const existingItem = menuTypeList.querySelector(`li[data-id="${selectedOption.value}"]`);
+            if (existingItem) {
+                console.log('This menu type is already added.');
+                return; // Prevent adding duplicates
+            }
+    
             const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
             menuTypeList.appendChild(listItem);
             menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-
+    
             console.log('Menu Types after addition:', menuTypes);
         }
     });

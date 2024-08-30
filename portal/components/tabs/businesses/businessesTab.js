@@ -99,24 +99,25 @@ class BusinessesTab {
         return { formHtml, initializeForm };
     }
 
-    loadBusinessForm(type, businessData) {
+    loadBusinessForm(type, businessData = null) {
         const { formHtml, initializeForm } = this.getFormAndInitializer(type);
         console.log('Returned from getFormAndInitializer:', { formHtml, initializeForm });
         const contentArea = document.querySelector('.tab-content');
-        console.log('Business data being passed from loadBusinessForm:', businessData);
         contentArea.innerHTML = formHtml;
-        this.initializeForm(contentArea, initializeForm, businessData);
+        this.initializeForm(contentArea, initializeForm, type, businessData);
     }
 
-    async initializeForm(formContainer, initializeForm, businessData, type = null) {
-        console.log('Initializing form with:', { initializeForm, businessData });
-    
-        // Determine the type either from businessData or the passed type argument
+    async initializeForm(formContainer, initializeForm, type, businessData ) {
         const businessType = businessData ? businessData.type : type;
         console.log('Determined businessType:', businessType);
     
         if (typeof initializeForm !== 'function') {
             console.error('initializeForm is not a function');
+            return;
+        }
+
+        if (!businessType) {
+            console.error('businessType is not defined');
             return;
         }
     
@@ -125,9 +126,7 @@ class BusinessesTab {
         } else {
             formContainer.imageUrls = [];
         }
-    
-        // Pass `businessData` into `initializeForm` to ensure correct initialization 
-        console.log('Initializing form:', { businessType, initializeForm });
+
         initializeForm(formContainer, businessData);
     
         const combinedForm = formContainer.querySelector('#combined-form');
@@ -202,6 +201,7 @@ class BusinessesTab {
                         }
     
                         try {
+                            console.log('Going into second form with businessType: ', businessType)
                             if (businessType === 'eat') {
                                 if (businessData && businessData.id) {
                                     await this.apiService.updateEatForm(businessId, detailsFormData);
@@ -288,7 +288,27 @@ class BusinessesTab {
     
         // Initialize form fields with existing data
         if (typeof this.initializeMenuSelection === 'function') {
-            this.initializeMenuSelection(formContainer, businessData.menu_types || []);
+            let menuTypes = [];
+            console.log('Biz type reported from the new switch', businessData.type)
+            switch (businessData.type) {
+                case 'eat':
+                    menuTypes = businessData.menu_types || [];
+                    break;
+                case 'stay':
+                    menuTypes = businessData.stay_types || [];
+                    break;
+                case 'play':
+                    menuTypes = businessData.play_types || [];
+                    break;
+                case 'shop':
+                    menuTypes = businessData.shop_types || [];
+                    break;
+                default:
+                    console.error(`Unsupported business type: ${businessData.type}`);
+                    return;
+            }
+        
+            this.initializeMenuSelection(formContainer, menuTypes);
         } else {
             console.error('initializeMenuSelection is not defined or not a function');
         }

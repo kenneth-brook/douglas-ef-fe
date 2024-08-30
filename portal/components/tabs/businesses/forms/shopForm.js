@@ -490,12 +490,38 @@ export const initializeShopForm = async (formContainer, businessData = null) => 
   attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
   attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
   initializeTinyMCE('#description', businessData ? businessData.description : '');
-  await initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
+
+  // Update the checkbox and status label based on `businessData`
+    const activeToggle = formContainer.querySelector('#active-toggle');
+    const toggleStatus = formContainer.querySelector('#toggle-status');
+
+    if (businessData && businessData.active) {
+        activeToggle.checked = true;
+        toggleStatus.textContent = 'Active';
+        toggleStatus.style.color = 'green';
+    } else {
+        activeToggle.checked = false;
+        toggleStatus.textContent = 'Inactive';
+        toggleStatus.style.color = 'red';
+    }
+
+    activeToggle.addEventListener('change', () => {
+        if (activeToggle.checked) {
+            toggleStatus.textContent = 'Active';
+            toggleStatus.style.color = 'green';
+        } else {
+            toggleStatus.textContent = 'Inactive';
+            toggleStatus.style.color = 'red';
+        }
+    });
 };
 
 export const initializeShopFormWrapper = (formContainer, businessData) => {
-  initializeShopForm(formContainer, businessData);
-  initializeMenuSelection(formContainer, businessData.menu_types || []);
+  if (!businessData) {
+    businessData = {}; // Set to an empty object if null to avoid accessing properties on null
+  }
+    initializeShopForm(formContainer, businessData);
+    initializeMenuSelection(formContainer, businessData ? businessData.shop_types : []);
 };
 
 // Menu Selection logic

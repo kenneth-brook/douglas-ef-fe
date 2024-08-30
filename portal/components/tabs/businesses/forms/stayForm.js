@@ -393,6 +393,7 @@ function displayImage(url, container, formContainer, file = null) {
     }
 }
 
+// Average Cost Dropdown Initialization
 const initializeAverageCostDropdown = async (formContainer, selectedCost = null) => {
     const averageCostDropdown = formContainer.querySelector('#averageCost');
     
@@ -431,8 +432,31 @@ export const initializeStayForm = async (formContainer, businessData = null) => 
     attachLogoUploadHandler(formContainer, businessData ? businessData.logoUrl : '');
     attachImageUploadHandler(formContainer, businessData ? businessData.images : []);
     initializeTinyMCE('#description', businessData ? businessData.description : '');
-    await initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
     await initializeAverageCostDropdown(formContainer, businessData ? businessData.cost : null);
+
+    // Update the checkbox and status label based on `businessData`
+    const activeToggle = formContainer.querySelector('#active-toggle');
+    const toggleStatus = formContainer.querySelector('#toggle-status');
+
+    if (businessData && businessData.active) {
+        activeToggle.checked = true;
+        toggleStatus.textContent = 'Active';
+        toggleStatus.style.color = 'green';
+    } else {
+        activeToggle.checked = false;
+        toggleStatus.textContent = 'Inactive';
+        toggleStatus.style.color = 'red';
+    }
+
+    activeToggle.addEventListener('change', () => {
+        if (activeToggle.checked) {
+            toggleStatus.textContent = 'Active';
+            toggleStatus.style.color = 'green';
+        } else {
+            toggleStatus.textContent = 'Inactive';
+            toggleStatus.style.color = 'red';
+        }
+    });
 };
 
 // TinyMCE initialization
@@ -452,219 +476,235 @@ const initializeTinyMCE = (selector, content = '') => {
     });
 };
 
+// Initialize Stay Form Wrapper
 export const initializeStayFormWrapper = (formContainer, businessData) => {
-  initializeStayForm(formContainer, businessData);
-  initializeMenuSelection(formContainer, businessData.menu_types || []);
+  if (!businessData) {
+    businessData = {}; // Set to an empty object if null to avoid accessing properties on null
+  }
+    initializeStayForm(formContainer, businessData);
+    initializeMenuSelection(formContainer, businessData ? businessData.stay_types : []);
 };
 
 // Menu Selection logic
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
-  const menuTypeDropdown = formContainer.querySelector('#menuType');
-  const menuTypeList = formContainer.querySelector('#menu-type-list');
-  const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-  const newMenuTypeInput = formContainer.querySelector('#newMenuType');
-  const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
+    const menuTypeDropdown = formContainer.querySelector('#menuType');
+    const menuTypeList = formContainer.querySelector('#menu-type-list');
+    const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
+    const newMenuTypeInput = formContainer.querySelector('#newMenuType');
+    const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
 
-  if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton || !newMenuTypeInput || !addNewMenuTypeButton) {
-      console.error('One or more elements not found for Menu Selection initialization');
-      return;
-  }
+    if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton || !newMenuTypeInput || !addNewMenuTypeButton) {
+        console.error('One or more elements not found for Menu Selection initialization');
+        return;
+    }
 
-  const menuTypes = [];
+    const menuTypes = [];
 
-  // Fetch and populate the menu type dropdown
-  const fetchedMenuTypes = await getMenuTypes();
-  console.log('Fetched Menu Types:', fetchedMenuTypes);
+    // Fetch and populate the menu type dropdown
+    const fetchedMenuTypes = await getMenuTypes();
+    console.log('Fetched Menu Types:', fetchedMenuTypes);
 
-  if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
-      fetchedMenuTypes.forEach(type => {
-          const option = document.createElement('option');
-          option.value = type.id;
-          option.textContent = type.name;
-          menuTypeDropdown.appendChild(option);
-      });
+    if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
+        fetchedMenuTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.id;
+            option.textContent = type.name;
+            menuTypeDropdown.appendChild(option);
+        });
 
-      selectedMenuTypes.forEach(selectedTypeId => {
-          const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
-          if (type) {
-              const listItem = createMenuListItem(type.name, type.id);
-              menuTypeList.appendChild(listItem);
-              menuTypes.push({ id: type.id, name: type.name });
-          }
-      });
-  } else {
-      console.error('Error fetching menu types:', fetchedMenuTypes);
-  }
+        selectedMenuTypes.forEach(selectedTypeId => {
+            const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
+            if (type) {
+                const existingItem = menuTypeList.querySelector(`li[data-id="${type.id}"]`);
+                if (!existingItem) {
+                    const listItem = createMenuListItem(type.name, type.id);
+                    menuTypeList.appendChild(listItem);
+                    menuTypes.push({ id: type.id, name: type.name });
+                }
+            }
+        });
+    } else {
+        console.error('Error fetching menu types:', fetchedMenuTypes);
+    }
 
-  // Add event listener for adding new selections
-  addMenuTypeButton.addEventListener('click', () => {
-      const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
-      if (selectedOption) {
-          const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
-          menuTypeList.appendChild(listItem);
-          menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-      }
-  });
+    // Add event listener for adding new selections
+    addMenuTypeButton.addEventListener('click', () => {
+        const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
+        if (selectedOption) {
+            const existingItem = menuTypeList.querySelector(`li[data-id="${selectedOption.value}"]`);
+            if (existingItem) {
+                console.log('This menu type is already added.');
+                return; // Prevent adding duplicates
+            }
 
-  // Add event listener for adding new menu type
-  addNewMenuTypeButton.addEventListener('click', async () => {
-      const newMenuType = newMenuTypeInput.value.trim();
-      if (newMenuType) {
-          const response = await addNewMenuType(newMenuType);
-          if (response && response.id) {
-              const option = document.createElement('option');
-              option.value = response.id;
-              option.textContent = newMenuType;
-              menuTypeDropdown.appendChild(option);
+            const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
+            menuTypeList.appendChild(listItem);
+            menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
 
-              const listItem = createMenuListItem(newMenuType, response.id);
-              menuTypeList.appendChild(listItem);
-              menuTypes.push({ id: response.id, name: newMenuType });
+            console.log('Menu Types after addition:', menuTypes);
+        }
+    });
 
-              newMenuTypeInput.value = ''; // Clear the input field
-          } else {
-              console.error('Error adding new menu type:', response);
-          }
-      }
-  });
+    // Add event listener for adding new menu type
+    addNewMenuTypeButton.addEventListener('click', async () => {
+        const newMenuType = newMenuTypeInput.value.trim();
+        if (newMenuType) {
+            const response = await addNewMenuType(newMenuType);
+            if (response && response.id) {
+                const option = document.createElement('option');
+                option.value = response.id;
+                option.textContent = newMenuType;
+                menuTypeDropdown.appendChild(option);
 
-  formContainer.menuTypes = menuTypes;
+                const listItem = createMenuListItem(newMenuType, response.id);
+                menuTypeList.appendChild(listItem);
+                menuTypes.push({ id: response.id, name: newMenuType });
 
-  // Helper function to create the list item
-  function createMenuListItem(name, id) {
-      const listItem = document.createElement('li');
-      listItem.textContent = name;
-      const removeButton = document.createElement('button');
-      removeButton.textContent = 'x';
-      removeButton.style.color = 'red';
-      removeButton.style.marginLeft = '10px';
-      removeButton.addEventListener('click', () => {
-          menuTypeList.removeChild(listItem);
-          const index = menuTypes.findIndex(type => type.id === id);
-          if (index > -1) {
-              menuTypes.splice(index, 1);
-          }
-      });
-      listItem.appendChild(removeButton);
-      return listItem;
-  }
+                newMenuTypeInput.value = ''; // Clear the input field
+            } else {
+                console.error('Error adding new menu type:', response);
+            }
+        }
+    });
+
+    formContainer.menuTypes = menuTypes;
+
+    // Helper function to create the list item
+    function createMenuListItem(name, id) {
+        const listItem = document.createElement('li');
+        listItem.textContent = name;
+        listItem.dataset.id = id; // Add data-id attribute for better identification
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'x';
+        removeButton.style.color = 'red';
+        removeButton.style.marginLeft = '10px';
+        removeButton.addEventListener('click', () => {
+            menuTypeList.removeChild(listItem);
+            const index = menuTypes.findIndex(type => type.id === id);
+            if (index > -1) {
+                menuTypes.splice(index, 1);
+            }
+        });
+        listItem.appendChild(removeButton);
+        return listItem;
+    }
 };
 
 // Fetch menu types from the backend
 export const getMenuTypes = async () => {
-  const tableName = `stay_type`;
-  try {
-      const response = await apiService.fetch(`menu-types?table=${tableName}`);
-      return response;
-  } catch (error) {
-      console.error(`Error fetching menu types:`, error);
-      return [];
-  }
+    const tableName = `stay_type`;
+    try {
+        const response = await apiService.fetch(`menu-types?table=${tableName}`);
+        return response;
+    } catch (error) {
+        console.error(`Error fetching menu types:`, error);
+        return [];
+    }
 };
 
 // Fetch average costs from the backend
 export const getAverageCosts = async () => {
-  const tableName = `stay_cost`;
-  try {
-      const response = await apiService.fetch(`average-costs?table=${tableName}`);
-      return response;
-  } catch (error) {
-      console.error(`Error fetching average costs:`, error);
-      return [];
-  }
+    const tableName = `stay_cost`;
+    try {
+        const response = await apiService.fetch(`average-costs?table=${tableName}`);
+        return response;
+    } catch (error) {
+        console.error(`Error fetching average costs:`, error);
+        return [];
+    }
 };
 
 // Handle file uploads
 async function uploadFile(file, formContainer, type) {
-  const formData = new FormData();
-  const uniqueFilename = getUniqueFilename(file.name);
-  formData.append('file', file, uniqueFilename);
+    const formData = new FormData();
+    const uniqueFilename = getUniqueFilename(file.name);
+    formData.append('file', file, uniqueFilename);
 
-  try {
-      const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
-          method: 'POST',
-          body: formData,
-      });
+    try {
+        const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
+            method: 'POST',
+            body: formData,
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (result && result[0]) {
-          const uploadedUrl = `https://douglas.365easyflow.com/easyflow-images/uploads/${uniqueFilename}`;
-          if (type === 'logo') {
-              formContainer.logoUrl = uploadedUrl;
-          } else if (type === 'image') {
-              formContainer.imageUrls.push(uploadedUrl);
-          }
-      } else {
-          console.error('Failed to upload file:', result);
-      }
-  } catch (error) {
-      console.error('Error uploading file:', error);
-  }
+        if (result && result[0]) {
+            const uploadedUrl = `https://douglas.365easyflow.com/easyflow-images/uploads/${uniqueFilename}`;
+            if (type === 'logo') {
+                formContainer.logoUrl = uploadedUrl;
+            } else if (type === 'image') {
+                formContainer.imageUrls.push(uploadedUrl);
+            }
+        } else {
+            console.error('Failed to upload file:', result);
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+    }
 }
 
 // Handle special days selection
 export const attachSpecialDayHandlers = (formContainer) => {
-  const specialDays = [];
-  const addDayButton = formContainer.querySelector('#add-day-button');
+    const specialDays = [];
+    const addDayButton = formContainer.querySelector('#add-day-button');
 
-  if (addDayButton) {
-      addDayButton.addEventListener('click', () => {
-          const specialDayInput = formContainer.querySelector('#special-day');
-          const alteredHoursInput = formContainer.querySelector('#altered-hours');
-          const specialDay = specialDayInput.value.trim();
-          const alteredHours = alteredHoursInput.value.trim();
+    if (addDayButton) {
+        addDayButton.addEventListener('click', () => {
+            const specialDayInput = formContainer.querySelector('#special-day');
+            const alteredHoursInput = formContainer.querySelector('#altered-hours');
+            const specialDay = specialDayInput.value.trim();
+            const alteredHours = alteredHoursInput.value.trim();
 
-          if (specialDay && alteredHours) {
-              specialDays.push({ day: specialDay, hours: alteredHours });
+            if (specialDay && alteredHours) {
+                specialDays.push({ day: specialDay, hours: alteredHours });
 
-              const dayHoursList = formContainer.querySelector('#day-hours-list');
-              const listItem = document.createElement('div');
-              listItem.className = 'day-hours-item';
-              listItem.textContent = `${specialDay}: ${alteredHours}`;
-              dayHoursList.appendChild(listItem);
+                const dayHoursList = formContainer.querySelector('#day-hours-list');
+                const listItem = document.createElement('div');
+                listItem.className = 'day-hours-item';
+                listItem.textContent = `${specialDay}: ${alteredHours}`;
+                dayHoursList.appendChild(listItem);
 
-              specialDayInput.value = '';
-              alteredHoursInput.value = '';
-          } else {
-              alert('Please fill both fields.');
-          }
-      });
+                specialDayInput.value = '';
+                alteredHoursInput.value = '';
+            } else {
+                alert('Please fill both fields.');
+            }
+        });
 
-      formContainer.specialDays = specialDays;
-  }
+        formContainer.specialDays = specialDays;
+    }
 };
 
 // Helper function to generate unique filenames
 const getUniqueFilename = (filename) => {
-  const date = new Date().toISOString().replace(/[-:.]/g, '');
-  return `${date}_${filename}`;
+    const date = new Date().toISOString().replace(/[-:.]/g, '');
+    return `${date}_${filename}`;
 };
 
 // Helper function to upload files to DreamHost
 const uploadFilesToDreamHost = async (formData) => {
-  try {
-      const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
-          method: 'POST',
-          body: formData,
-      });
+    try {
+        const response = await fetch('https://douglas.365easyflow.com/easyflow-images/upload.php', {
+            method: 'POST',
+            body: formData,
+        });
 
-      const responseBody = await response.text();
-      const result = JSON.parse(responseBody);
+        const responseBody = await response.text();
+        const result = JSON.parse(responseBody);
 
-      if (result.length === 0) {
-          throw new Error('Upload to DreamHost failed: empty result');
-      }
+        if (result.length === 0) {
+            throw new Error('Upload to DreamHost failed: empty result');
+        }
 
-      return result;
-  } catch (error) {
-      console.error('Error uploading files:', error);
-      throw error;
-  }
+        return result;
+    } catch (error) {
+        console.error('Error uploading files:', error);
+        throw error;
+    }
 };
 
 // Initialize the form when the document is ready
 document.addEventListener('DOMContentLoaded', () => {
-  const formContainer = document.querySelector('.tab-content');
-  initializeStayForm(formContainer);
+    const formContainer = document.querySelector('.tab-content');
+    initializeStayForm(formContainer);
 });

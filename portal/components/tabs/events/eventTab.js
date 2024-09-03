@@ -1,24 +1,19 @@
-import { eventForm, initializeEventForm } from './eventForm.js';
+import ApiService from '../../../services/apiService.js';
+import { eventFormTemplate } from './formParts/eventFormTemplate.js';
+import { initializeEventForm } from './formParts/eventFormInitializer.js';
 import ListEvents from './listEvents.js';
 
 class EventsTab {
-  constructor(store, router, apiService) {
+  constructor(store, router) {
     this.store = store;
     this.router = router;
-    this.apiService = apiService;
+    this.apiService = new ApiService();
     this.setupRoutes();
   }
 
   setupRoutes() {
-    console.log("Router in EventsTab:", this.router);
-    console.log("Router addRoute method:", typeof this.router.addRoute);
-
-    if (!this.router || typeof this.router.addRoute !== 'function') {
-        throw new Error("Router is not properly initialized or does not have an 'addRoute' method.");
-    }
-    
     this.router.addRoute('events/add', () => this.showAddEvent());
-    this.router.addRoute('events/edit/:id', id => this.showEditEvent(id));
+    this.router.addRoute('events/edit/:id', (id) => this.showEditEvent(id));
     this.router.addRoute('events/list', this.showListEvents.bind(this));
   }
 
@@ -28,7 +23,7 @@ class EventsTab {
       console.error("Content area element not found");
       return;
     }
-    contentArea.innerHTML = eventForm();
+    contentArea.innerHTML = eventFormTemplate();
     initializeEventForm(contentArea, this.apiService);
   }
 
@@ -38,8 +33,22 @@ class EventsTab {
       console.error("Content area element not found");
       return;
     }
-    contentArea.innerHTML = `<div>Edit Event with ID: ${id}</div>`;
-    // Add logic to load and initialize the edit form
+
+    // Load the event data from the store using the event ID
+    console.log("Attempting to edit event with ID:", id);
+    console.log("Current events in store:", this.store.getState().data.events);
+
+    const event = this.store.getState().data.events.find(e => e.id == id);
+    if (!event) {
+      console.error(`Event with ID ${id} not found`);
+      return;
+    }
+
+    // Render the form template
+    contentArea.innerHTML = eventFormTemplate();
+
+    // Initialize the form with the existing event data
+    initializeEventForm(contentArea, this.apiService, event); // Pass the event data to the initializer
   }
 
   showListEvents() {
@@ -53,7 +62,7 @@ class EventsTab {
     const listEvents = new ListEvents(this.router, this.store);
     const renderedEvents = listEvents.render();
     contentArea.appendChild(renderedEvents);
-}
+  }
 }
 
 export default EventsTab;

@@ -43,54 +43,51 @@ class ListEvents {
   createEventCard(event) {
     const card = document.createElement('div');
     card.className = 'event-card';
-
+  
     const name = document.createElement('h3');
     name.textContent = event.name;
     card.appendChild(name);
-
+  
     const date = document.createElement('p');
     const startDate = new Date(event.start_date);
     const endDate = event.end_date ? new Date(event.end_date) : null;
-    if (endDate) {
-      date.textContent = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-    } else {
-      date.textContent = `${startDate.toLocaleDateString()}`;
-    }
+    date.textContent = endDate
+      ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+      : `${startDate.toLocaleDateString()}`;
     card.appendChild(date);
-
+  
     if (event.start_time) {
       const startTime = document.createElement('p');
       startTime.textContent = `Start Time: ${event.start_time}`;
       card.appendChild(startTime);
     }
-
+  
     if (event.end_time) {
       const endTime = document.createElement('p');
       endTime.textContent = `End Time: ${event.end_time}`;
       card.appendChild(endTime);
     }
-
+  
     const address = document.createElement('p');
     address.textContent = `${event.street_address}, ${event.city}, ${event.state} ${event.zip}`;
     card.appendChild(address);
-
-    // Add edit and delete buttons (optional)
+  
     const editButton = document.createElement('button');
     editButton.textContent = 'Edit';
     editButton.addEventListener('click', () => {
       this.router.navigate(`events/edit/${event.id}`);
     });
     card.appendChild(editButton);
-
+  
     const deleteButton = document.createElement('button');
     deleteButton.textContent = 'Delete';
     deleteButton.addEventListener('click', () => {
       // Handle delete action here
     });
     card.appendChild(deleteButton);
-
+  
     return card;
-  }
+  }  
 }
 
 export default ListEvents;

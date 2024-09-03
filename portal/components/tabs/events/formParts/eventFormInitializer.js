@@ -19,7 +19,7 @@ export const initializeEventForm = async (formContainer, apiService, event = nul
     // If event data is provided, populate the form with it
     if (event) {
         console.log("Populating form with event data:", event);
-        
+
         formContainer.querySelector('#eventName').value = event.name || '';
         formContainer.querySelector('#streetAddress').value = event.street_address || '';
         formContainer.querySelector('#city').value = event.city || '';
@@ -36,6 +36,33 @@ export const initializeEventForm = async (formContainer, apiService, event = nul
         formContainer.querySelector('#website').value = event.web || '';
         formContainer.querySelector('#description').value = event.description || '';
         // Populate other fields as necessary, like logo and social media
+
+        if (event.images && event.images.length > 0) {
+            const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
+            event.images.forEach(image => {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'thumbnail-wrapper';
+
+                const imgElement = document.createElement('img');
+                imgElement.src = `https://douglas.365easyflow.com/easyflow-images/${image}`;
+                imgElement.className = 'thumbnail';
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.className = 'remove-button';
+                removeButton.addEventListener('click', () => {
+                    imgWrapper.remove(); // Remove the image from the DOM
+                    const index = event.images.indexOf(image);
+                    if (index > -1) {
+                        event.images.splice(index, 1); // Remove from the array
+                    }
+                });
+
+                imgWrapper.appendChild(imgElement);
+                imgWrapper.appendChild(removeButton);
+                imageThumbnailsContainer.appendChild(imgWrapper);
+            });
+        }
     } else {
         console.log("No event data provided to populate the form.");
     }

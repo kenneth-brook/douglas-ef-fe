@@ -1,3 +1,5 @@
+import { getUniqueFilename, uploadFilesToDreamHost } from './uploadUtils.js'
+
 export const attachImageUploadHandler = (formContainer) => {
     const imageUploadInput = formContainer.querySelector('#imageUpload');
     const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');

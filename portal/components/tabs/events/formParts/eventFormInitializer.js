@@ -80,33 +80,42 @@ export const initializeEventForm = async (formContainer, apiService, event = nul
     submitButton.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('Submit button clicked and default prevented');
-        
+    
         tinymce.triggerSave(); // Ensure TinyMCE content is saved to the textarea
-
+    
         const formData = new FormData(eventForm);
 
+        formData.delete('logoFile');  // Remove any unintended file fields
+        formData.delete('imageFiles');
+    
         const logoUrl = formContainer.logoUrl || '';
         const imageUrls = formContainer.imageUrls || [];
-
+        const socialMediaPairs = formContainer.socialMediaPairs || [];
+    
         formData.append('logoUrl', logoUrl);
         formData.append('imageUrls', JSON.stringify(imageUrls));
-
-        const socialMediaPairs = formContainer.socialMediaPairs || [];
         formData.append('socialMedia', JSON.stringify(socialMediaPairs));
-
-        if (event) {
+    
+        if (event && event.id) {
             formData.append('id', event.id);  // Append ID for the update case
         }
-
+    
+        // Log formData contents for debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+    
         try {
             const response = event 
-                ? await apiService.updateEvent(formData)  // Update existing event
-                : await apiService.submitEventForm(formData);  // Create new event
-
-            console.log('Event form submitted successfully', response);
-            // Optionally navigate to the list view after successful submission
+                ? await apiService.updateEvent(event.id, formData)
+                : await apiService.submitEventForm(formData);
+    
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
         } catch (error) {
             console.error('Error submitting event form:', error);
         }
     });
+    
 };

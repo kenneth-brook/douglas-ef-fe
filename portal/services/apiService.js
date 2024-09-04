@@ -56,7 +56,7 @@ class ApiService {
             'Content-Type': 'application/json'
         }
     });
-}
+  }
 
 
   async updateBusiness(businessId, data) {
@@ -189,7 +189,33 @@ class ApiService {
         console.error('Failed to parse response JSON:', error);
         return { message: 'Business deleted successfully (no JSON response)' };
     }
-}
+  }
+
+  async submitEventForm(formData) {
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+    return this.fetch('event-form-submission', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+      headers: {
+          'Accept': 'application/json'
+          // Note: We don't set 'Content-Type' for FormData because the browser handles it
+        }
+    });
+  }
+
+  async updateEvent(eventId, formData) {
+    return this.fetch(`event-form-submission/${eventId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData,
+      headers: {
+          'Accept': 'application/json'
+        }
+    });
+  }
 
   async fetchData() {
     const endpoints = {
@@ -212,9 +238,9 @@ class ApiService {
       const results = await Promise.all(Object.keys(endpoints).map(async (key) => {
         const result = await fetchEndpointData(endpoints[key]);
         if (key !== 'events') {
-          return { key, data: result.map(item => ({ ...item, type: key, name: item.name.replace(/['"]/g, '') })) };
+          return { key, data: result.map(item => ({ ...item, type: key, name: (item.name || '').replace(/['"]/g, '') })) };
         } else {
-          return { key, data: result.map(item => ({ ...item, type: 'events', name: item.name.replace(/['"]/g, ''), start_date: new Date(item.start_date) })) };
+          return { key, data: result.map(item => ({ ...item, type: 'events', name: (item.name || '').replace(/['"]/g, ''), start_date: new Date(item.start_date) })) };
         }
       }));
 

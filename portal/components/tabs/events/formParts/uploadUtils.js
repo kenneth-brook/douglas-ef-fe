@@ -1,10 +1,10 @@
-const getUniqueFilename = (filename) => {
+export const getUniqueFilename = (filename) => {
     const date = new Date().toISOString().replace(/[-:.]/g, '');
     console.log(`${date}_${filename}`);
     return `${date}_${filename}`;
   };
 
-  const uploadFilesToDreamHost = async (formData) => {
+export const uploadFilesToDreamHost = async (formData) => {
     try {
       console.log('Uploading files to DreamHost');
       for (const [key, value] of formData.entries()) {

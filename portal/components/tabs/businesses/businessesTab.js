@@ -233,8 +233,8 @@ class BusinessesTab {
                     }
     
                     setTimeout(() => {
-                        this.router.navigate('businesses/list');
-                    }, 1000);
+                        window.location.reload();
+                    }, 2000);
                 } else {
                     console.error('Business creation/update failed');
                 }

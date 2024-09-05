@@ -285,6 +285,19 @@ class ApiService {
       throw error;
     }
   }
+
+  async fetchUsers() {
+    try {
+      const response = await fetch(`${this.baseURL}/users`);  // Replace with your users endpoint
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();  // Parse and return the JSON response
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
 }
 
 export default ApiService;

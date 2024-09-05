@@ -1,18 +1,20 @@
-// Assuming AddOfficeContent.js, EditOfficeContent.js, and ListOfficeContent.js are defined in the same directory
+import ApiService from '../../../services/apiService.js';
 //import AddOffice from './AddOffice.js';
 //import EditOffice from './EditOffice.js';
 import ListOffice from './listOffice.js';
 
 class OfficeTab {
-  constructor(router) {
+  constructor(store, router) {
+    this.store = store;
     this.router = router;
+    this.apiService = new ApiService();
     this.setupRoutes();
   }
 
   setupRoutes() {
+    this.router.addRoute('office/list', () => this.showListOfficeContent());
     this.router.addRoute('office/add', () => this.showAddOfficeContent());
     this.router.addRoute('office/edit', () => this.showEditOfficeContent());
-    this.router.addRoute('office/list', () => this.showListOfficeContent());
     // Default sub-route for 'office'
     this.router.addRoute('office', () => this.showListOfficeContent());
   }

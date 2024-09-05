@@ -5,38 +5,37 @@ import TabManager from './components/tabManager.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const store = new Store({ data: { combined: [] } });
-    console.log("Store initialized:", store);
-
     const router = new Router();
-    console.log("Router initialized:", router);
-
     const apiService = new ApiService();
 
     try {
-        console.log("Fetching user role and initial data...");
+        console.log("Fetching user role...");
         const userData = await apiService.fetch('user-role');
 
         if (!userData.role) {
-            throw new Error('Role data is missing');
+            throw new Error('User role data is missing');
         }
 
-        console.log("User role fetched:", userData.role);
+        // Set the user role in the store
+        store.setUserRole(userData.role);
+        console.log("User role set:", userData.role);
 
         // Fetch main data and store it
-        const mainData = await apiService.fetchData();
-        console.log("Main data fetched:", mainData);
-
-        // Update the store with the fetched data
+        const mainData = await apiService.fetch('main-data-endpoint');
         store.updateState({ data: mainData });
 
-        console.log("Router before initializing TabManager:", router);
-        console.log("Router addRoute method:", typeof router.addRoute);
+        // Initialize the router
+        const router = new Router();  // <---- This was the missing line
+        console.log("Router initialized:", router);
 
         // Initialize TabManager with the store, apiService, and router
         const tabManager = new TabManager(store, apiService, router);
         console.log("TabManager initialized");
 
+        // Render tabs and load the current route
+        tabManager.renderTabs();
         router.loadCurrentRoute();
+
     } catch (error) {
         console.error("Failed to initialize the application:", error);
         document.getElementById('content').innerHTML = '<p>Error loading the application. Please try again later.</p>';

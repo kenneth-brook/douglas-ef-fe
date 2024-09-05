@@ -217,6 +217,30 @@ class ApiService {
     });
   }
 
+  async deleteEvent(eventId) {
+    try {
+      // Fetch the parsed response body (as your fetch method returns either JSON or text)
+      const responseBody = await this.fetch(`event-form-submission/${eventId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+  
+      console.log('Parsed Response Body:', responseBody);
+  
+      // Manually check the body content if it's returning the success message or any other indicator
+      if (responseBody.message && responseBody.message === 'Event deleted successfully') {
+        console.log('Event deleted successfully');
+        return responseBody; // Return the parsed response (already JSON)
+      } else {
+        console.error('Unexpected response body or delete failed');
+        throw new Error('Unexpected response body or delete failed');
+      }
+    } catch (error) {
+      console.error('Error during deleteEvent:', error.message);
+      throw error;
+    }
+  }  
+
   async fetchData() {
     const endpoints = {
       eat: `${this.baseURL}data/eat`,

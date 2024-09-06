@@ -288,13 +288,36 @@ class ApiService {
 
   async fetchUsers() {
     try {
-      const response = await fetch(`${this.baseURL}/users`);  // Replace with your users endpoint
+      const response = await fetch(`${this.baseURL}/users`, { credentials: 'include' });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return await response.json();  // Parse and return the JSON response
     } catch (error) {
       console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async addUser(userData) {
+    try {
+      const response = await fetch(`${this.baseURL}/add-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();  // Fetch the response text for more details
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding user:', error);
       throw error;
     }
   }

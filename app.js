@@ -21,15 +21,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     throw new Error(`Failed to login: ${response.status} - ${text}`);
                 });
             }
-            return response.text();
+            return response.json();  // Ensure that the response is treated as JSON
         })
         .then(data => {
-            window.location.href = './portal/index.html'; // Redirect to the SPA
+            console.log('Response from server:', data);  // Log the entire response to inspect it
+
+            if (data.temppass) {
+                // If temppass is true, show an alert
+                alert('You are using a temporary password. Please update your password after logging in.');
+            }
+            //window.location.href = './portal/index.html';  // Redirect to the SPA
         })
         .catch(error => {
             console.error('Error:', error);
-            console.error('Detailed message:', error.message);
             document.querySelector('.error-message').innerHTML = 'Login Failed: ' + error.message;
         });
     });
 });
+

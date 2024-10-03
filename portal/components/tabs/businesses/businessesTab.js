@@ -13,7 +13,6 @@ class BusinessesTab {
         this.store = store;
         this.router = router;
         this.apiService = apiService;
-        console.log('apiService methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(apiService)));
         this.setupRoutes();
     }
 
@@ -72,23 +71,23 @@ class BusinessesTab {
         });
     }
 
-    getFormAndInitializer(type) {
+    getFormAndInitializer(type, businessData = {}) {
         let formHtml, initializeForm;
         switch (type) {
             case 'eat':
-                formHtml = eatForm();
+                formHtml = eatForm(businessData);
                 initializeForm = initializeEatFormWrapper;
                 break;
             case 'stay':
-                formHtml = stayForm();
+                formHtml = stayForm(businessData);
                 initializeForm = initializeStayFormWrapper;
                 break;
             case 'play':
-                formHtml = playForm();
+                formHtml = playForm(businessData);
                 initializeForm = initializePlayFormWrapper;
                 break;
             case 'shop':
-                formHtml = shopForm();
+                formHtml = shopForm(businessData);
                 initializeForm = initializeShopFormWrapper;
                 break;
             default:
@@ -102,12 +101,24 @@ class BusinessesTab {
         return { formHtml, initializeForm };
     }
 
-    loadBusinessForm(type, businessData = null) {
-        const { formHtml, initializeForm } = this.getFormAndInitializer(type);
-        console.log('Returned from getFormAndInitializer:', { formHtml, initializeForm });
+    loadBusinessForm(type = null, businessData = null) {
+        // Retrieve the selected business type from the store if not provided
+        const selectedType = type || this.store.getSelectedBusinessType();
+        
+        // Ensure selectedType exists before proceeding
+        if (!selectedType) {
+            console.error("Selected business type is not set");
+            return;
+        }
+    
+        const { formHtml, initializeForm } = this.getFormAndInitializer(selectedType, businessData);
+    
         const contentArea = document.querySelector('.tab-content');
         contentArea.innerHTML = formHtml;
-        this.initializeForm(contentArea, initializeForm, type, businessData);
+    
+        setTimeout(() => {
+            this.initializeForm(contentArea, initializeForm, selectedType, businessData);
+        }, 0);
     }
 
     async initializeForm(formContainer, initializeForm, type, businessData ) {
@@ -123,10 +134,16 @@ class BusinessesTab {
             console.error('businessType is not defined');
             return;
         }
+
+        console.log('data before list feeding ', businessData)
+        console.log('image sorce before list feeding ', businessData.images)
     
-        if (businessData && businessData.imageUrls) {
-            formContainer.imageUrls = [...new Set(businessData.imageUrls)];
+        if (businessData && businessData.images) {
+            console.log('we see the image, ', businessData.images)
+            formContainer.imageUrls = [...new Set(businessData.images)];
+            console.log('img passed along ', formContainer.imageUrls)
         } else {
+            console.log('Not seeing the image')
             formContainer.imageUrls = [];
         }
 
@@ -146,7 +163,10 @@ class BusinessesTab {
             tinymce.triggerSave();
     
             formContainer.imageUrls = [...new Set(formContainer.imageUrls)];
+            console.log('just checking what this is doing ', formContainer.imageUrls)
             const formData = new FormData(combinedForm);
+
+            console.log('image before submission ', formContainer.imageUrls)
     
             const logoUrl = formContainer.logoUrl || '';
             const socialMediaArray = formContainer.socialMediaPairs || [];
@@ -161,6 +181,7 @@ class BusinessesTab {
     
             const data = {
                 active: formData.get('active') ? 'true' : 'false',
+                chamberMember: formData.get('isMember') ? 'true' : 'false',
                 businessName: formData.get('businessName'),
                 streetAddress: formData.get('streetAddress'),
                 mailingAddress: formData.get('mailingAddress'),
@@ -179,6 +200,8 @@ class BusinessesTab {
                 menuTypes: menuTypes.map(mt => mt.id),
                 specialDays: specialDays
             };
+
+            console.log('the packaged data before send ', data)
     
             try {
                 const businessResponse = businessData && businessData.id
@@ -188,7 +211,7 @@ class BusinessesTab {
                 if (businessResponse && businessResponse.id) {
                     const businessId = businessResponse.id;
     
-                    if (['eat', 'play', 'shop', 'stay'].includes(businessType)) {
+                    if (['eat', 'play', 'shop', 'stay', 'other'].includes(businessType)) {
                         const detailsFormData = new URLSearchParams();
                         detailsFormData.append('businessId', businessId);
                         detailsFormData.append('menuTypes', JSON.stringify(menuTypes.map(mt => mt.id)));
@@ -229,6 +252,12 @@ class BusinessesTab {
                                 } else {
                                     await this.apiService.submitStayForm(detailsFormData);
                                 }
+                            } else if (businessType === 'other') {
+                                if (businessData && businessData.id) {
+                                    await this.apiService.updateOtherForm(businessId, detailsFormData);
+                                } else {
+                                    await this.apiService.submitOtherForm(detailsFormData);
+                                }
                             }
                         } catch (error) {
                             console.error('Error submitting additional form data:', error);
@@ -236,8 +265,8 @@ class BusinessesTab {
                     }
     
                     setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                        //window.location.reload();
+                    }, 1500);
                 } else {
                     console.error('Business creation/update failed');
                 }
@@ -250,6 +279,7 @@ class BusinessesTab {
     
         if (businessData) {
             this.populateFormFields(formContainer, businessData);
+            console.log('passing into form fill ', formContainer)
         }
     }    
     
@@ -337,16 +367,43 @@ class BusinessesTab {
         }
     
         // Handle Images
-        formContainer.imageUrls = businessData.imageUrls || [];
-        const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
-        if (Array.isArray(businessData.imageUrls)) {
-            businessData.imageUrls.forEach(url => {
-                const img = document.createElement('img');
-                img.src = url;
-                img.className = 'thumbnail';
-                imageThumbnailsContainer.appendChild(img);
-            });
+        console.log('formContainer.imageUrls before tab handle: ', formContainer.imageUrls);
+
+const imageThumbnailsContainer = formContainer.querySelector('#image-thumbnails');
+
+// Clear the thumbnails container to prevent duplicate rendering
+imageThumbnailsContainer.innerHTML = '';
+
+
+
+console.log('formContainer.imageUrls after tab handle: ', formContainer.imageUrls);
+
+// Ensure thumbnails are displayed for the combined set of images with a remove button
+formContainer.imageUrls.forEach(url => {
+    const thumbnailContainer = document.createElement('div');
+    thumbnailContainer.className = 'thumbnail-container';
+
+    const img = document.createElement('img');
+    img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+    img.className = 'thumbnail';
+    thumbnailContainer.appendChild(img);
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-button';
+
+    // Add event listener to handle removal of the image
+    removeButton.addEventListener('click', () => {
+        const index = formContainer.imageUrls.indexOf(url);
+        if (index > -1) {
+            formContainer.imageUrls.splice(index, 1); // Remove from imageUrls array
         }
+        imageThumbnailsContainer.removeChild(thumbnailContainer); // Remove the thumbnail
+    });
+
+    thumbnailContainer.appendChild(removeButton);
+    imageThumbnailsContainer.appendChild(thumbnailContainer);
+});
     
         // Handle Menu Types
         if (Array.isArray(businessData.menuTypes)) {
@@ -479,17 +536,17 @@ class BusinessesTab {
           console.error('Error fetching menu types:', fetchedMenuTypes);
         }
       
-        const fetchedAverageCosts = await getAverageCosts();
-        if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
-          fetchedAverageCosts.forEach(cost => {
-            const option = document.createElement('option');
-            option.value = cost.id;
-            option.textContent = `${cost.symbol} - ${cost.description}`;
-            averageCostDropdown.appendChild(option);
-          });
-        } else {
-          console.error('Error fetching average costs:', fetchedAverageCosts);
-        }
+        //const fetchedAverageCosts = await getAverageCosts();
+        //if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
+          //fetchedAverageCosts.forEach(cost => {
+            //const option = document.createElement('option');
+            //option.value = cost.id;
+            //option.textContent = `${cost.symbol} - ${cost.description}`;
+            //averageCostDropdown.appendChild(option);
+          //});
+        //} else {
+          //console.error('Error fetching average costs:', fetchedAverageCosts);
+        //}
       
         addMenuTypeButton.addEventListener('click', () => {
           const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];

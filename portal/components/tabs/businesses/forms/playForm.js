@@ -449,7 +449,7 @@ const initializeTinyMCE = (selector, content = '') => {
     });
 };
 
-export const initializePlayForm = async (formContainer, businessData = null) => {
+export const initializePlayForm = async (formContainer, businessData) => {
     if (!formContainer.imageUrls) {
         formContainer.imageUrls = [];
     }

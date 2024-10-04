@@ -254,7 +254,7 @@ class BusinessesTab {
                     }
     
                     setTimeout(() => {
-                        //window.location.reload();
+                        window.location.reload();
                     }, 1500);
                 } else {
                     console.error('Business creation/update failed');
@@ -496,8 +496,6 @@ formContainer.imageUrls.forEach(url => {
     
         contentArea.innerHTML = formHtml;
 
-        //this.initializeForm(contentArea, initializeForm, businessData);
-
         this.loadBusinessForm(businessData.type, businessData);
     
         this.setActiveTab(`businesses/edit/${id}`);
@@ -563,28 +561,6 @@ formContainer.imageUrls.forEach(url => {
         }
     };
 }
-
-const getMenuTypes = async () => {
-    const tableName = `eat_type`;
-    try {
-      const response = await apiService.fetch(`menu-types?table=${tableName}`);
-      return response;
-    } catch (error) {
-      console.error(`Error fetching menu types:`, error);
-      return [];
-    }
-  };
-  
-  const getAverageCosts = async () => {
-    const tableName = `eat_cost`;
-    try {
-      const response = await apiService.fetch(`average-costs?table=${tableName}`);
-      return response;
-    } catch (error) {
-      console.error(`Error fetching average costs:`, error);
-      return [];
-    }
-  };
   
   const addNewMenuType = async (newMenuType) => {
     const tableName = `eat_type`;

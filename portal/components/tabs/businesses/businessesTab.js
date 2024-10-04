@@ -135,15 +135,9 @@ class BusinessesTab {
             return;
         }
 
-        console.log('data before list feeding ', businessData)
-        console.log('image sorce before list feeding ', businessData.images)
-    
         if (businessData && businessData.images) {
-            console.log('we see the image, ', businessData.images)
             formContainer.imageUrls = [...new Set(businessData.images)];
-            console.log('img passed along ', formContainer.imageUrls)
         } else {
-            console.log('Not seeing the image')
             formContainer.imageUrls = [];
         }
 
@@ -163,10 +157,7 @@ class BusinessesTab {
             tinymce.triggerSave();
     
             formContainer.imageUrls = [...new Set(formContainer.imageUrls)];
-            console.log('just checking what this is doing ', formContainer.imageUrls)
             const formData = new FormData(combinedForm);
-
-            console.log('image before submission ', formContainer.imageUrls)
     
             const logoUrl = formContainer.logoUrl || '';
             const socialMediaArray = formContainer.socialMediaPairs || [];
@@ -200,8 +191,6 @@ class BusinessesTab {
                 menuTypes: menuTypes.map(mt => mt.id),
                 specialDays: specialDays
             };
-
-            console.log('the packaged data before send ', data)
     
             try {
                 const businessResponse = businessData && businessData.id
@@ -522,32 +511,6 @@ formContainer.imageUrls.forEach(url => {
         const newMenuTypeInput = formContainer.querySelector('#newMenuType');
         const menuTypeList = formContainer.querySelector('#menu-type-list');
       
-        const menuTypes = [];
-      
-        const fetchedMenuTypes = await getMenuTypes();
-        if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
-          fetchedMenuTypes.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.id;
-            option.textContent = type.name;
-            menuTypeDropdown.appendChild(option);
-          });
-        } else {
-          console.error('Error fetching menu types:', fetchedMenuTypes);
-        }
-      
-        //const fetchedAverageCosts = await getAverageCosts();
-        //if (fetchedAverageCosts && Array.isArray(fetchedAverageCosts)) {
-          //fetchedAverageCosts.forEach(cost => {
-            //const option = document.createElement('option');
-            //option.value = cost.id;
-            //option.textContent = `${cost.symbol} - ${cost.description}`;
-            //averageCostDropdown.appendChild(option);
-          //});
-        //} else {
-          //console.error('Error fetching average costs:', fetchedAverageCosts);
-        //}
-      
         addMenuTypeButton.addEventListener('click', () => {
           const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
           if (selectedOption) {
@@ -577,8 +540,6 @@ formContainer.imageUrls.forEach(url => {
             }
           }
         });
-      
-        formContainer.menuTypes = menuTypes;
       
         function createMenuListItem(name, id) {
           const listItem = document.createElement('li');

@@ -357,7 +357,7 @@ class BusinessesTab {
         }
     
         // Handle Logo
-        formContainer.logoUrl = businessData.logoUrl || '';
+        //formContainer.logoUrl = businessData.logoUrl || '';
         const logoPreviewContainer = formContainer.querySelector('#logo-preview');
         if (businessData.logoUrl) {
             const img = document.createElement('img');

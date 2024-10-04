@@ -84,7 +84,6 @@ class ApiService {
 
   async updateEatForm(businessId, formData) {
     console.log('form before update:', formData);
-    return
     const response = await this.fetch(`eat-form-submission/${businessId}`, {
         method: 'PUT',
         body: formData,
@@ -97,7 +96,6 @@ class ApiService {
   }
 
   async submitPlayForm(formData) {
-    return
     const response = await this.fetch('play-form-submission', {
       method: 'POST',
       body: formData,
@@ -111,7 +109,6 @@ class ApiService {
 
   async updatePlayForm(businessId, formData) {
     console.log('form before update:', formData);
-    return
     const response = await this.fetch(`play-form-submission/${businessId}`, {
         method: 'PUT',
         body: formData,

@@ -254,7 +254,7 @@ class BusinessesTab {
                     }
     
                     setTimeout(() => {
-                        window.location.reload();
+                        //window.location.reload();
                     }, 1500);
                 } else {
                     console.error('Business creation/update failed');

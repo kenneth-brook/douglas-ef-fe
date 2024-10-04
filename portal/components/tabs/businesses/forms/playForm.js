@@ -437,6 +437,30 @@ function displayLogo(url, container, formContainer, file = null) {
     }
 }
 
+function displayImage(url, container, formContainer, file = null) {
+    const img = document.createElement('img');
+    img.src = url.startsWith('data:') ? url : `https://douglas.365easyflow.com/easyflow-images/${url}`;
+    img.className = 'thumbnail';
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'Remove';
+    removeButton.className = 'remove-button';
+    removeButton.addEventListener('click', () => {
+        container.removeChild(img);
+        container.removeChild(removeButton);
+        formContainer.imageUrls = formContainer.imageUrls.filter(imageUrl => imageUrl !== url); // Remove from the list
+    });
+
+    container.appendChild(img);
+    container.appendChild(removeButton);
+
+    if (file) {
+        uploadFile(file, formContainer, 'image');
+    } else {
+        formContainer.imageUrls.push(url); // Keep existing URL
+    }
+}
+
 const initializeTinyMCE = (selector, content = '') => {
     tinymce.init({
         selector: selector,

@@ -494,27 +494,20 @@ export const initializeEatFormWrapper = (formContainer, businessData) => {
     const selectedMenuTypes = businessData.menu_types || []; // Safely access menu_types
     console.log('Initializing menu selection with:', { formContainer, selectedMenuTypes });
 
-    initializeMenuSelection(formContainer, businessData ? businessData.menu_types : []);
+    initializeMenuSelection(formContainer, businessData.menu_types || []);
 };
 
 // Menu Selection logic
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
-    console.log('Initializing menu selection with:', { formContainer, selectedMenuTypes });
     const menuTypeDropdown = formContainer.querySelector('#menuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
     const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-
-    if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton) {
-        console.error('One or more elements not found for Menu Selection initialization');
-        return;
-    }
+    const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
+    const newMenuTypeInput = formContainer.querySelector('#newMenuType');
 
     const menuTypes = [];
 
-    // Fetch and populate the menu type dropdown
     const fetchedMenuTypes = await getMenuTypes();
-    console.log('Fetched Menu Types:', fetchedMenuTypes);
-
     if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
         fetchedMenuTypes.forEach(type => {
             const option = document.createElement('option');
@@ -523,44 +516,50 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
             menuTypeDropdown.appendChild(option);
         });
 
-        //console.log('Selected Menu Types (from businessData I hope):', businessData);
-
         selectedMenuTypes.forEach(selectedTypeId => {
             const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
             if (type) {
-                const existingItem = menuTypeList.querySelector(`li[data-id="${type.id}"]`);
-                if (!existingItem) {
-                    const listItem = createMenuListItem(type.name, type.id);
-                    menuTypeList.appendChild(listItem);
-                    menuTypes.push({ id: type.id, name: type.name });
-                }
+                const listItem = createMenuListItem(type.name, type.id);
+                menuTypeList.appendChild(listItem);
+                menuTypes.push({ id: type.id, name: type.name });
             }
         });
     } else {
         console.error('Error fetching menu types:', fetchedMenuTypes);
     }
 
-    // Add event listener for adding new selections
     addMenuTypeButton.addEventListener('click', () => {
         const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
         if (selectedOption) {
-            const existingItem = menuTypeList.querySelector(`li[data-id="${selectedOption.value}"]`);
-            if (existingItem) {
-                console.log('This menu type is already added.');
-                return; // Prevent adding duplicates
-            }
-    
             const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
             menuTypeList.appendChild(listItem);
             menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-    
-            console.log('Menu Types after addition:', menuTypes);
+        }
+    });
+
+    addNewMenuTypeButton.addEventListener('click', async () => {
+        const newMenuType = newMenuTypeInput.value.trim();
+        if (newMenuType) {
+            const response = await addNewMenuType(newMenuType);
+            if (response && response.id) {
+                const option = document.createElement('option');
+                option.value = response.id;
+                option.textContent = newMenuType;
+                menuTypeDropdown.appendChild(option);
+
+                const listItem = createMenuListItem(newMenuType, response.id);
+                menuTypeList.appendChild(listItem);
+                menuTypes.push({ id: response.id, name: newMenuType });
+
+                newMenuTypeInput.value = ''; // Clear the input field
+            } else {
+                console.error('Error adding new menu type:', response);
+            }
         }
     });
 
     formContainer.menuTypes = menuTypes;
 
-    // Helper function to create the list item
     function createMenuListItem(name, id) {
         const listItem = document.createElement('li');
         listItem.textContent = name;
@@ -580,7 +579,6 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
     }
 };
 
-// Fetch menu types from the backend
 export const getMenuTypes = async () => {
     const tableName = `eat_type`;
     try {

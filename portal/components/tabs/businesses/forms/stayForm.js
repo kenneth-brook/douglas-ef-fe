@@ -496,21 +496,13 @@ export const initializeStayFormWrapper = (formContainer, businessData) => {
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
     const menuTypeDropdown = formContainer.querySelector('#menuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
+    const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
     const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
     const newMenuTypeInput = formContainer.querySelector('#newMenuType');
-    const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
-
-    if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton || !newMenuTypeInput || !addNewMenuTypeButton) {
-        console.error('One or more elements not found for Menu Selection initialization');
-        return;
-    }
-
     const menuTypes = [];
-
+  
     // Fetch and populate the menu type dropdown
     const fetchedMenuTypes = await getMenuTypes();
-    console.log('Fetched Menu Types:', fetchedMenuTypes);
-
     if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
         fetchedMenuTypes.forEach(type => {
             const option = document.createElement('option');
@@ -518,69 +510,74 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
             option.textContent = type.name;
             menuTypeDropdown.appendChild(option);
         });
-
+  
         selectedMenuTypes.forEach(selectedTypeId => {
             const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
             if (type) {
-                const existingItem = menuTypeList.querySelector(`li[data-id="${type.id}"]`);
-                if (!existingItem) {
-                    const listItem = createMenuListItem(type.name, type.id);
-                    menuTypeList.appendChild(listItem);
-                    menuTypes.push({ id: type.id, name: type.name });
-                }
+                const listItem = createMenuListItem(type.name, type.id);
+                menuTypeList.appendChild(listItem);
+                menuTypes.push({ id: type.id, name: type.name });
             }
         });
     } else {
         console.error('Error fetching menu types:', fetchedMenuTypes);
     }
-
+  
     // Add event listener for adding new selections
     addMenuTypeButton.addEventListener('click', () => {
         const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
         if (selectedOption) {
-            const existingItem = menuTypeList.querySelector(`li[data-id="${selectedOption.value}"]`);
-            if (existingItem) {
-                console.log('This menu type is already added.');
-                return; // Prevent adding duplicates
-            }
-
             const listItem = createMenuListItem(selectedOption.textContent, selectedOption.value);
             menuTypeList.appendChild(listItem);
             menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
-
-            console.log('Menu Types after addition:', menuTypes);
         }
     });
-
-    // Add event listener for adding new menu type
+  
+    const addNewMenuType = async (newMenuType) => {
+      const tableName = `stay_type`;
+      try {
+        const response = await apiService.fetch('menu-types', {
+          method: 'POST',
+          body: JSON.stringify({ name: newMenuType, table: tableName }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        return response;
+      } catch (error) {
+        console.error(`Error adding new menu type:`, error);
+        return { id: Date.now(), name: newMenuType };
+      }
+    };
+  
     addNewMenuTypeButton.addEventListener('click', async () => {
-        const newMenuType = newMenuTypeInput.value.trim();
-        if (newMenuType) {
-            const response = await addNewMenuType(newMenuType);
-            if (response && response.id) {
-                const option = document.createElement('option');
-                option.value = response.id;
-                option.textContent = newMenuType;
-                menuTypeDropdown.appendChild(option);
-
-                const listItem = createMenuListItem(newMenuType, response.id);
-                menuTypeList.appendChild(listItem);
-                menuTypes.push({ id: response.id, name: newMenuType });
-
-                newMenuTypeInput.value = ''; // Clear the input field
-            } else {
-                console.error('Error adding new menu type:', response);
-            }
-        }
-    });
-
+      const newMenuType = newMenuTypeInput.value.trim();
+      if (newMenuType) {
+          const response = await addNewMenuType(newMenuType);
+          if (response && response.id) {
+              const option = document.createElement('option');
+              option.value = response.id;
+              option.textContent = newMenuType;
+              menuTypeDropdown.appendChild(option);
+  
+              const listItem = createMenuListItem(newMenuType, response.id);
+              menuTypeList.appendChild(listItem);
+              menuTypes.push({ id: response.id, name: newMenuType });
+  
+              newMenuTypeInput.value = ''; // Clear the input field
+          } else {
+              console.error('Error adding new menu type:', response);
+          }
+      }
+  
+  });
+  
     formContainer.menuTypes = menuTypes;
-
+  
     // Helper function to create the list item
     function createMenuListItem(name, id) {
         const listItem = document.createElement('li');
         listItem.textContent = name;
-        listItem.dataset.id = id; // Add data-id attribute for better identification
         const removeButton = document.createElement('button');
         removeButton.textContent = 'x';
         removeButton.style.color = 'red';
@@ -595,10 +592,10 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
         listItem.appendChild(removeButton);
         return listItem;
     }
-};
-
-// Fetch menu types from the backend
-export const getMenuTypes = async () => {
+  };
+  
+  // Fetch menu types from the backend
+  export const getMenuTypes = async () => {
     const tableName = `stay_type`;
     try {
         const response = await apiService.fetch(`menu-types?table=${tableName}`);
@@ -607,7 +604,7 @@ export const getMenuTypes = async () => {
         console.error(`Error fetching menu types:`, error);
         return [];
     }
-};
+  };
 
 // Fetch average costs from the backend
 export const getAverageCosts = async () => {

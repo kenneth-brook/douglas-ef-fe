@@ -527,12 +527,12 @@ export const initializePlayFormWrapper = (formContainer, businessData) => {
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
     const menuTypeDropdown = formContainer.querySelector('#menuType');
     const menuTypeList = formContainer.querySelector('#menu-type-list');
-    const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
     const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
+    const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
     const newMenuTypeInput = formContainer.querySelector('#newMenuType');
-
     const menuTypes = [];
-
+  
+    // Fetch and populate the menu type dropdown
     const fetchedMenuTypes = await getMenuTypes();
     if (fetchedMenuTypes && Array.isArray(fetchedMenuTypes)) {
         fetchedMenuTypes.forEach(type => {
@@ -541,7 +541,7 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
             option.textContent = type.name;
             menuTypeDropdown.appendChild(option);
         });
-
+  
         selectedMenuTypes.forEach(selectedTypeId => {
             const type = fetchedMenuTypes.find(t => String(t.id) === String(selectedTypeId));
             if (type) {
@@ -553,7 +553,8 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
     } else {
         console.error('Error fetching menu types:', fetchedMenuTypes);
     }
-
+  
+    // Add event listener for adding new selections
     addMenuTypeButton.addEventListener('click', () => {
         const selectedOption = menuTypeDropdown.options[menuTypeDropdown.selectedIndex];
         if (selectedOption) {
@@ -562,30 +563,49 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
             menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
         }
     });
-
+  
+    const addNewMenuType = async (newMenuType) => {
+      const tableName = `play_type`;
+      try {
+        const response = await apiService.fetch('menu-types', {
+          method: 'POST',
+          body: JSON.stringify({ name: newMenuType, table: tableName }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        return response;
+      } catch (error) {
+        console.error(`Error adding new menu type:`, error);
+        return { id: Date.now(), name: newMenuType };
+      }
+    };
+  
     addNewMenuTypeButton.addEventListener('click', async () => {
-        const newMenuType = newMenuTypeInput.value.trim();
-        if (newMenuType) {
-            const response = await addNewMenuType(newMenuType);
-            if (response && response.id) {
-                const option = document.createElement('option');
-                option.value = response.id;
-                option.textContent = newMenuType;
-                menuTypeDropdown.appendChild(option);
-
-                const listItem = createMenuListItem(newMenuType, response.id);
-                menuTypeList.appendChild(listItem);
-                menuTypes.push({ id: response.id, name: newMenuType });
-
-                newMenuTypeInput.value = ''; // Clear the input field
-            } else {
-                console.error('Error adding new menu type:', response);
-            }
-        }
-    });
-
+      const newMenuType = newMenuTypeInput.value.trim();
+      if (newMenuType) {
+          const response = await addNewMenuType(newMenuType);
+          if (response && response.id) {
+              const option = document.createElement('option');
+              option.value = response.id;
+              option.textContent = newMenuType;
+              menuTypeDropdown.appendChild(option);
+  
+              const listItem = createMenuListItem(newMenuType, response.id);
+              menuTypeList.appendChild(listItem);
+              menuTypes.push({ id: response.id, name: newMenuType });
+  
+              newMenuTypeInput.value = ''; // Clear the input field
+          } else {
+              console.error('Error adding new menu type:', response);
+          }
+      }
+  
+  });
+  
     formContainer.menuTypes = menuTypes;
-
+  
+    // Helper function to create the list item
     function createMenuListItem(name, id) {
         const listItem = document.createElement('li');
         listItem.textContent = name;
@@ -603,7 +623,19 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
         listItem.appendChild(removeButton);
         return listItem;
     }
-};
+  };
+  
+  // Fetch menu types from the backend
+  export const getMenuTypes = async () => {
+    const tableName = `play_type`;
+    try {
+        const response = await apiService.fetch(`menu-types?table=${tableName}`);
+        return response;
+    } catch (error) {
+        console.error(`Error fetching menu types:`, error);
+        return [];
+    }
+  };
 
 export const attachSpecialDayHandlers = (formContainer, existingSpecialDays = []) => {
     const specialDays = existingSpecialDays || [];
@@ -633,18 +665,6 @@ export const attachSpecialDayHandlers = (formContainer, existingSpecialDays = []
         });
 
         formContainer.specialDays = specialDays;
-    }
-};
-
-// Fetch menu types from the backend
-export const getMenuTypes = async () => {
-    const tableName = `play_type`;
-    try {
-        const response = await apiService.fetch(`menu-types?table=${tableName}`);
-        return response;
-    } catch (error) {
-        console.error(`Error fetching menu types:`, error);
-        return [];
     }
 };
 

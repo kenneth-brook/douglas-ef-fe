@@ -535,13 +535,9 @@ export const initializeShopFormWrapper = (formContainer, businessData) => {
 export const initializeMenuSelection = async (formContainer, selectedMenuTypes = []) => {
   const menuTypeDropdown = formContainer.querySelector('#menuType');
   const menuTypeList = formContainer.querySelector('#menu-type-list');
+  const addNewMenuTypeButton = formContainer.querySelector('#add-new-menu-type');
   const addMenuTypeButton = formContainer.querySelector('#add-menu-type');
-
-  if (!menuTypeDropdown || !menuTypeList || !addMenuTypeButton) {
-      console.error('One or more elements not found for Menu Selection initialization');
-      return;
-  }
-
+  const newMenuTypeInput = formContainer.querySelector('#newMenuType');
   const menuTypes = [];
 
   // Fetch and populate the menu type dropdown
@@ -575,6 +571,45 @@ export const initializeMenuSelection = async (formContainer, selectedMenuTypes =
           menuTypes.push({ id: selectedOption.value, name: selectedOption.textContent });
       }
   });
+
+  const addNewMenuType = async (newMenuType) => {
+    const tableName = `shop_type`;
+    try {
+      const response = await apiService.fetch('menu-types', {
+        method: 'POST',
+        body: JSON.stringify({ name: newMenuType, table: tableName }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error(`Error adding new menu type:`, error);
+      return { id: Date.now(), name: newMenuType };
+    }
+  };
+
+  addNewMenuTypeButton.addEventListener('click', async () => {
+    const newMenuType = newMenuTypeInput.value.trim();
+    if (newMenuType) {
+        const response = await addNewMenuType(newMenuType);
+        if (response && response.id) {
+            const option = document.createElement('option');
+            option.value = response.id;
+            option.textContent = newMenuType;
+            menuTypeDropdown.appendChild(option);
+
+            const listItem = createMenuListItem(newMenuType, response.id);
+            menuTypeList.appendChild(listItem);
+            menuTypes.push({ id: response.id, name: newMenuType });
+
+            newMenuTypeInput.value = ''; // Clear the input field
+        } else {
+            console.error('Error adding new menu type:', response);
+        }
+    }
+
+});
 
   formContainer.menuTypes = menuTypes;
 
